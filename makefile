@@ -1,10 +1,10 @@
 # Liste des backends, bases de données et serveurs web disponibles
 BACKENDS = php node go python
-DBS = pgsql mysql
+DBS = postgres mysql
 WEBSERVERS = apache nginx
 
 # Fonction pour composer les fichiers Docker Compose
-DB_PROFILE = $(shell grep DB_TYPE .env | cut -d'=' -f2 | sed 's/pgsql/pgsql/' | sed 's/mysql/mysql/')
+DB_PROFILE = $(shell grep DB_TYPE .env | cut -d'=' -f2 | sed 's/postgres/postgres/' | sed 's/mysql/mysql/')
 COMPOSE_FILES = -f docker-compose.yml
 ifeq ($(shell grep USE_MAILPIT .env | cut -d'=' -f2), true)
     COMPOSE_FILES += -f docker-compose.mailpit.yml
@@ -12,10 +12,6 @@ endif
 ifeq ($(shell grep USE_WEBSOCKET .env | cut -d'=' -f2), true)
     COMPOSE_FILES += -f docker-compose.websocket.yml
 endif
-
-# Préparer docker-compose.yml avec la bonne configuration DB
-prepare-compose:
-	@python3 setup_compose.py
 
 .PHONY: start stop build clean switch switch-webserver apache nginx status logs config cleanup enable-mailpit disable-mailpit enable-websocket disable-websocket set-version help
 
@@ -176,10 +172,10 @@ cleanup:
 # Configuration complète (backend, DB, serveur web, mailpit, websocket)
 switch:
 ifndef BACKEND
-	$(error "Usage: make switch BACKEND=<backend> DB=<mysql|pgsql> [WEBSERVER=<webserver>] [MAILPIT=<true|false>] [WEBSOCKET=<true|false>] [WEBSOCKET_TYPE=<socketio|native>] [BACKEND_VERSION=<ver>] [DB_VERSION=<ver>]. Disponibles: $(BACKENDS)")
+	$(error "Usage: make switch BACKEND=<backend> DB=<mysql|postgres> [WEBSERVER=<webserver>] [MAILPIT=<true|false>] [WEBSOCKET=<true|false>] [WEBSOCKET_TYPE=<socketio|native>] [BACKEND_VERSION=<ver>] [DB_VERSION=<ver>]. Disponibles: $(BACKENDS)")
 endif
 ifndef DB
-	$(error "Usage: make switch BACKEND=<backend> DB=<mysql|pgsql> [WEBSERVER=<webserver>] [MAILPIT=<true|false>] [WEBSOCKET=<true|false>] [WEBSOCKET_TYPE=<socketio|native>] [BACKEND_VERSION=<ver>] [DB_VERSION=<ver>]. Disponibles: $(DBS)")
+	$(error "Usage: make switch BACKEND=<backend> DB=<mysql|postgres> [WEBSERVER=<webserver>] [MAILPIT=<true|false>] [WEBSOCKET=<true|false>] [WEBSOCKET_TYPE=<socketio|native>] [BACKEND_VERSION=<ver>] [DB_VERSION=<ver>]. Disponibles: $(DBS)")
 endif
 	@if ! echo "$(BACKENDS)" | grep -wq $(BACKEND); then \
 		echo "Erreur: backend '$(BACKEND)' invalide. Choix possibles: $(BACKENDS)"; exit 1; \
@@ -213,7 +209,7 @@ ifdef DB_VERSION
 	@echo " $(DB_VERSION)"
 else
 	@case "$(DB)" in \
-		pgsql) sed -i.bak 's|^DB_VERSION=.*|DB_VERSION=16|' .env; echo " 16 (défaut)";; \
+		postgres) sed -i.bak 's|^DB_VERSION=.*|DB_VERSION=16|' .env; echo " 16 (défaut)";; \
 		mysql) sed -i.bak 's|^DB_VERSION=.*|DB_VERSION=8.0|' .env; echo " 8.0 (défaut)";; \
 	esac
 endif
@@ -325,7 +321,7 @@ help:
 	@echo "💡 Exemples d'utilisation :"
 	@echo "   # Configuration complète :"
 	@echo "   make switch BACKEND=php DB=mysql WEBSERVER=nginx MAILPIT=true WEBSOCKET=true WEBSOCKET_TYPE=socketio    # Stack complète avec WebSocket"
-	@echo "   make switch BACKEND=node BACKEND_VERSION=20 DB=pgsql DB_VERSION=16 WEBSERVER=apache MAILPIT=false WEBSOCKET=true # Configuration complète avec versions"
+	@echo "   make switch BACKEND=node BACKEND_VERSION=20 DB=postgres DB_VERSION=16 WEBSERVER=apache MAILPIT=false WEBSOCKET=true # Configuration complète avec versions"
 	@echo "   # Configuration partielle (les autres paramètres restent inchangés) :"
-	@echo "   make switch BACKEND=python DB=pgsql WEBSOCKET=true                                                        # Backend + DB + WebSocket"
+	@echo "   make switch BACKEND=python DB=postgres WEBSOCKET=true                                                        # Backend + DB + WebSocket"
 	@echo "   make switch BACKEND=go BACKEND_VERSION=1.21 DB=mysql                                                      # Backend avec version + DB"

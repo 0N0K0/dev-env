@@ -82,7 +82,9 @@ def cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websock
             print("   Suppression: docker-compose.mailpit.yml")
     
     # Gérer le fichier WebSocket
+    print(f"DEBUG: use_websocket='{use_websocket}', type={type(use_websocket)}")
     if use_websocket == 'false':
+        print("DEBUG: Condition use_websocket == 'false' est vraie")
         if os.path.exists('docker-compose.websocket.yml'):
             os.remove('docker-compose.websocket.yml')
             print("   Suppression: docker-compose.websocket.yml")
@@ -90,6 +92,8 @@ def cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websock
             import shutil
             shutil.rmtree('websocket/')
             print("   Suppression: websocket/")
+    else:
+        print(f"DEBUG: Condition use_websocket == 'false' est fausse, use_websocket='{use_websocket}'")
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:

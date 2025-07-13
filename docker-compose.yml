@@ -42,7 +42,7 @@ services:
             - db
 
     db:
-        image: postgres:${DB_VERSION}
+        image: ${DB_TYPE}:${DB_VERSION}
         container_name: db
         environment:
             POSTGRES_DB: ${DB_NAME}
@@ -53,7 +53,7 @@ services:
             MYSQL_PASSWORD: ${DB_PASSWORD}
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
         volumes:
-            - db:/var/lib/postgresql/data
+            - db:/var/lib/${DB_TYPE}/data
         ports:
             - '5432:5432'
             - '3306:3306'
