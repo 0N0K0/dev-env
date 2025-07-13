@@ -109,12 +109,14 @@ disable-websocket:
 # Nettoyer le template pour un projet spécifique
 cleanup:
 	@echo "🧹 Nettoyage du template pour la configuration actuelle..."
-	@$(eval BACKEND := $(shell grep BACKEND .env | cut -d'=' -f2))
-	@$(eval WEBSERVER := $(shell grep WEBSERVER .env | cut -d'=' -f2))
-	@$(eval DB_TYPE := $(shell grep DB_TYPE .env | cut -d'=' -f2))
-	@$(eval USE_MAILPIT := $(shell grep USE_MAILPIT .env | cut -d'=' -f2))
-	@$(eval USE_WEBSOCKET := $(shell grep USE_WEBSOCKET .env | cut -d'=' -f2))
-	@echo "   Configuration détectée: $(BACKEND) + $(WEBSERVER) + $(DB_TYPE)"
+	@$(eval BACKEND := $(shell grep "^BACKEND=" .env | cut -d'=' -f2))
+	@$(eval WEBSERVER := $(shell grep "^WEBSERVER=" .env | cut -d'=' -f2))
+	@$(eval DB_TYPE := $(shell grep "^DB_TYPE=" .env | cut -d'=' -f2))
+	@$(eval USE_MAILPIT := $(shell grep "^USE_MAILPIT=" .env | cut -d'=' -f2))
+	@$(eval USE_WEBSOCKET := $(shell grep "^USE_WEBSOCKET=" .env | cut -d'=' -f2))
+	@$(eval BACKEND_VERSION := $(shell grep "^BACKEND_VERSION=" .env | cut -d'=' -f2))
+	@$(eval DB_VERSION := $(shell grep "^DB_VERSION=" .env | cut -d'=' -f2))
+	@echo "   Configuration détectée: $(BACKEND) $(BACKEND_VERSION) + $(WEBSERVER) + $(DB_TYPE) $(DB_VERSION)"
 	@if [ "$(USE_MAILPIT)" = "true" ]; then echo "   Mailpit: activé"; else echo "   Mailpit: désactivé"; fi
 	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo "   WebSocket: activé"; else echo "   WebSocket: désactivé"; fi
 	@echo ""
@@ -142,6 +144,7 @@ cleanup:
 		esac \
 	done
 	@echo "📝 Mise à jour du docker-compose.yml..."
+	@echo "DEBUG: BACKEND='$(BACKEND)' WEBSERVER='$(WEBSERVER)' DB_TYPE='$(DB_TYPE)' USE_MAILPIT='$(USE_MAILPIT)' USE_WEBSOCKET='$(USE_WEBSOCKET)'"
 	@python3 cleanup_compose.py $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
 	@echo "📝 Mise à jour du Makefile..."
 	@sed -i.bak '/^BACKENDS\|^WEBSERVERS\|^DBS/d' makefile
