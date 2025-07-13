@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Test WebSocket - Dev Environment</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+			.container {
+				background: #f5f5f5;
+				padding: 20px;
+				border-radius: 8px;
+				margin: 10px 0;
+			}
+			.status {
+				padding: 10px;
+				border-radius: 4px;
+				margin: 10px 0;
+			}
+			.connected {
+				background: #d4edda;
+				color: #155724;
+				border: 1px solid #c3e6cb;
+			}
+			.disconnected {
+				background: #f8d7da;
+				color: #721c24;
+				border: 1px solid #f5c6cb;
+			}
+			.message {
+				background: white;
+				padding: 10px;
+				margin: 5px 0;
+				border-left: 4px solid #007bff;
+			}
+			input,
+			button {
+				padding: 10px;
+				margin: 5px;
+				font-size: 16px;
+			}
+			button {
+				background: #007bff;
+				color: white;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+			button:hover {
+				background: #0056b3;
+			}
+			.logs {
+				height: 300px;
+				overflow-y: auto;
+				background: black;
+				color: lime;
+				padding: 10px;
+				font-family: monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>🔌 Test WebSocket - Dev Environment</h1>
+
+		<div class="container">
+			<h3>Configuration</h3>
+			<p><strong>Type:</strong> <span id="wsType">Détection...</span></p>
+			<p>
+				<strong>Status:</strong>
+				<span
+					id="status"
+					class="status disconnected"
+					>Déconnecté</span
+				>
+			</p>
+			<button onclick="connect()">Se connecter</button>
+			<button onclick="disconnect()">Se déconnecter</button>
+			<button onclick="testDb()">Test DB</button>
+		</div>
+
+		<div class="container">
+			<h3>Envoyer un message</h3>
+			<input
+				type="text"
+				id="messageInput"
+				placeholder="Tapez votre message..."
+				style="width: 60%"
+			/>
+			<button onclick="sendMessage()">Envoyer</button>
+		</div>
+
+		<div class="container">
+			<h3>Messages reçus</h3>
+			<div id="messages"></div>
+		</div>
+
+		<div class="container">
+			<h3>Logs du serveur</h3>
+			<div
+				id="logs"
+				class="logs"
+			></div>
+		</div>
+
+		<!-- Socket.IO pour le mode socketio -->
+		<script src="/socket.io/socket.io.js"></script>
+
+		<script>
+			let socket = null;
+			let wsType = 'socketio'; // Sera détecté automatiquement
+
+			function log(message) {
+				const logsDiv = document.getElementById('logs');
+				const timestamp = new Date().toLocaleTimeString();
+				logsDiv.innerHTML += `[${timestamp}] ${message}\n`;
+				logsDiv.scrollTop = logsDiv.scrollHeight;
+			}
+
+			function addMessage(data) {
+				const messagesDiv = document.getElementById('messages');
+				const messageDiv = document.createElement('div');
+				messageDiv.className = 'message';
+				messageDiv.innerHTML = `
+                <strong>${new Date(data.timestamp).toLocaleTimeString()}</strong><br>
+                ${JSON.stringify(data, null, 2)}
+            `;
+				messagesDiv.appendChild(messageDiv);
+				messagesDiv.scrollTop = messagesDiv.scrollHeight;
+			}
+
+			function updateStatus(connected) {
+				const statusEl = document.getElementById('status');
+				if (connected) {
+					statusEl.textContent = 'Connecté';
+					statusEl.className = 'status connected';
+				} else {
+					statusEl.textContent = 'Déconnecté';
+					statusEl.className = 'status disconnected';
+				}
+			}
+
+			function detectWebSocketType() {
+				// Tenter de détecter le type via l'API
+				fetch('/health')
+					.then((response) => response.json())
+					.then((data) => {
+						wsType = data.type;
+						document.getElementById('wsType').textContent = wsType;
+						log(`Type détecté: ${wsType}`);
+					})
+					.catch(() => {
+						document.getElementById('wsType').textContent = 'socketio (défaut)';
+						log('Impossible de détecter le type, utilisation de Socket.IO par défaut');
+					});
+			}
+
+			function connect() {
+				if (wsType === 'socketio') {
+					connectSocketIO();
+				} else {
+					connectNativeWS();
+				}
+			}
+
+			function connectSocketIO() {
+				socket = io('http://localhost:3001');
+
+				socket.on('connect', () => {
+					log('Connecté via Socket.IO');
+					updateStatus(true);
+				});
+
+				socket.on('welcome', (data) => {
+					log('Message de bienvenue reçu');
+					addMessage(data);
+				});
+
+				socket.on('broadcast', (data) => {
+					log('Message diffusé reçu');
+					addMessage(data);
+				});
+
+				socket.on('db_response', (data) => {
+					log('Réponse DB reçue');
+					addMessage(data);
+				});
+
+				socket.on('disconnect', () => {
+					log('Déconnecté de Socket.IO');
+					updateStatus(false);
+				});
+			}
+
+			function connectNativeWS() {
+				socket = new WebSocket('ws://localhost:3001');
+
+				socket.onopen = () => {
+					log('Connecté via WebSocket natif');
+					updateStatus(true);
+				};
+
+				socket.onmessage = (event) => {
+					const data = JSON.parse(event.data);
+					log(`Message reçu: ${data.type}`);
+					addMessage(data);
+				};
+
+				socket.onclose = () => {
+					log('Déconnecté du WebSocket natif');
+					updateStatus(false);
+				};
+
+				socket.onerror = (error) => {
+					log(`Erreur WebSocket: ${error}`);
+				};
+			}
+
+			function disconnect() {
+				if (socket) {
+					if (wsType === 'socketio') {
+						socket.disconnect();
+					} else {
+						socket.close();
+					}
+					socket = null;
+				}
+			}
+
+			function sendMessage() {
+				const input = document.getElementById('messageInput');
+				const message = input.value.trim();
+
+				if (!message || !socket) return;
+
+				if (wsType === 'socketio') {
+					socket.emit('message', message);
+					log(`Message envoyé via Socket.IO: ${message}`);
+				} else {
+					socket.send(JSON.stringify({ message }));
+					log(`Message envoyé via WebSocket: ${message}`);
+				}
+
+				input.value = '';
+			}
+
+			function testDb() {
+				if (!socket) return;
+
+				if (wsType === 'socketio') {
+					socket.emit('db_test');
+					log('Test DB envoyé via Socket.IO');
+				} else {
+					socket.send(JSON.stringify({ type: 'db_test' }));
+					log('Test DB envoyé via WebSocket');
+				}
+			}
+
+			// Permettre l'envoi avec Entrée
+			document.getElementById('messageInput').addEventListener('keypress', (e) => {
+				if (e.key === 'Enter') sendMessage();
+			});
+
+			// Détection automatique au chargement
+			window.onload = () => {
+				detectWebSocketType();
+				log('Page chargée, prêt pour les tests WebSocket');
+			};
+		</script>
+	</body>
+</html>

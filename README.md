@@ -1,15 +1,15 @@
-# 🔧 Multi-Backend Development Environment Template
+# 🔧 Modèle de création d'environnements de développement
 
 Un **template repository** Docker Compose pour créer rapidement des environnements de développement avec différents langages et serveurs web. Parfait pour démarrer un nouveau projet ou prototyper une API.
 
 ## ✨ Fonctionnalités
 
--   🌐 **Serveurs web** : Apache ou Nginx (commutation facile)
--   🚀 **Backends** : PHP (FPM), Node.js, Python, Go
+-   🌐 **Serveurs web** : Apache ou Nginx
+-   🚀 **Backends** : PHP (FPM), Node.js, Python ou Go
 -   🗄️ **Bases de données** : PostgreSQL ou MySQL
--   📧 **SMTP local** : Mailpit pour les tests d'emails
+-   📧 **SMTP local** : Mailpit
 -   🔧 **Configuration flexible** : Variables d'environnement
--   🎯 **Commandes simples** : Makefile intégré
+-   🎯 **Commandes** : Makefile intégré
 -   🧹 **Nettoyage automatique** : Supprime les éléments non utilisés
 
 ---
@@ -18,22 +18,28 @@ Un **template repository** Docker Compose pour créer rapidement des environneme
 
 ### 1. Créer un nouveau projet depuis le template
 
+Sur GitHub :
+
+1. Cliquer sur **"Use this template"**
+2. Choisir un nom pour votre nouveau projet
+3. Cloner votre nouveau repository
+
 ```bash
-# Utiliser GitHub "Use this template" ou :
-git clone <template-repo> mon-nouveau-projet
+git clone <votre-nouveau-repo> mon-nouveau-projet
 cd mon-nouveau-projet
 ```
 
 ### 2. Configurer pour votre projet
 
 ```bash
-# Exemple : PHP + Apache + MySQL
-make switch BACKEND=php DB=mysql
-make switch-webserver WEBSERVER=apache
+# Configuration complète en une commande (recommandé)
+make switch BACKEND=php DB=mysql WEBSERVER=apache MAILPIT=true
 
-# Ou Node.js + Nginx + PostgreSQL
-make switch BACKEND=node DB=postgres
-make switch-webserver WEBSERVER=nginx
+# Avec versions spécifiques
+make switch BACKEND=node BACKEND_VERSION=18 DB=pgsql DB_VERSION=15 WEBSERVER=nginx MAILPIT=false
+
+# Configuration partielle (les autres paramètres restent inchangés)
+make switch BACKEND=python DB=pgsql  # Juste backend + DB
 ```
 
 ### 3. Nettoyer le template (supprimer les éléments non utilisés)
@@ -42,7 +48,7 @@ make switch-webserver WEBSERVER=nginx
 make cleanup
 ```
 
-### 4. Démarrer le développement
+### 4. Démarrer l'envrionnement
 
 ```bash
 make start
@@ -60,7 +66,7 @@ make start
 ### API REST PHP classique
 
 ```bash
-make switch BACKEND=php DB=mysql
+make switch BACKEND=php BACKEND_VERSION=8.3 DB=mysql DB_VERSION=8.0
 make switch-webserver WEBSERVER=apache
 make cleanup
 make start
@@ -69,7 +75,7 @@ make start
 ### Application Node.js moderne
 
 ```bash
-make switch BACKEND=node DB=postgres
+make switch BACKEND=node BACKEND_VERSION=20 DB=pgsql DB_VERSION=16
 make switch-webserver WEBSERVER=nginx
 make cleanup
 make start
@@ -78,7 +84,7 @@ make start
 ### Microservice Python
 
 ```bash
-make switch BACKEND=python DB=postgres
+make switch BACKEND=python BACKEND_VERSION=3.12 DB=pgsql DB_VERSION=15
 make switch-webserver WEBSERVER=apache
 make cleanup
 make start
@@ -87,7 +93,7 @@ make start
 ### Service Go performant
 
 ```bash
-make switch BACKEND=go DB=mysql
+make switch BACKEND=go BACKEND_VERSION=1.22 DB=mysql DB_VERSION=8.0
 make switch-webserver WEBSERVER=nginx
 make cleanup
 make start
@@ -95,16 +101,32 @@ make start
 
 ---
 
-### 3. Ou avec Nginx
+## 🧹 Que fait `make cleanup` ?
 
-```bash
-make nginx
+La commande `make cleanup` adapte le template à votre configuration spécifique :
+
+-   ✅ **Supprime les dossiers** des backends non utilisés (ex: si vous utilisez PHP, supprime `node/`, `python/`, `go/`)
+-   ✅ **Supprime les dossiers** des serveurs web non utilisés (ex: si vous utilisez Apache, supprime `nginx/`)
+-   ✅ **Nettoie les fichiers API** non utilisés dans `api/` (garde seulement le bon point d'entrée)
+-   ✅ **Simplifie le docker-compose.yml** (supprime les configs inutiles)
+-   ✅ **Nettoie le Makefile** (supprime les commandes de template)
+-   ✅ **Adapte les variables d'environnement** à votre configuration
+
+### Structure après cleanup
+
+Pour un projet **PHP + Apache + MySQL**, vous aurez :
+
 ```
-
-### 4. Accéder à l'application
-
--   **Application** : http://localhost
--   **Mailpit** : http://localhost:8025
+mon-projet/
+├── 📄 Makefile              # Simplifié
+├── 📄 .env                  # Votre config
+├── 📄 docker-compose.yml    # Adapté à votre stack
+├── 📄 README.md
+├── 🗂️ apache/               # Seulement Apache
+├── 🗂️ php/                  # Seulement PHP
+└── 🗂️ api/
+    └── index.php            # Seulement le fichier PHP
+```
 
 ---
 
@@ -128,21 +150,6 @@ make build     # Reconstruit les images
 make clean     # Supprime tout (⚠️ perte de données)
 make status    # État des conteneurs
 make logs      # Logs en temps réel
-```
-
-### Exemples de changement de configuration
-
-```bash
-# Setup Node.js + MySQL + Nginx
-make switch BACKEND=node DB=mysql
-make nginx
-
-# Setup Python + PostgreSQL + Apache
-make switch BACKEND=python DB=postgres
-make apache
-
-# Voir la config actuelle
-make config
 ```
 
 ---
@@ -172,6 +179,41 @@ DB_PASSWORD=root
 -   **Backend** : PHP avec PHP-FPM
 -   **Serveur web** : Apache
 -   **Base de données** : PostgreSQL
+
+### Configuration en une commande
+
+```bash
+# Configuration complète avec toutes les options
+make switch BACKEND=php BACKEND_VERSION=8.3 DB=mysql DB_VERSION=8.0 WEBSERVER=nginx MAILPIT=true
+
+# Configuration rapide (versions par défaut, autres paramètres inchangés)
+make switch BACKEND=node DB=pgsql WEBSERVER=apache
+
+# Juste backend et DB (serveur web et Mailpit inchangés)
+make switch BACKEND=python DB=pgsql
+
+# Versions par défaut utilisées si non spécifiées :
+# PHP: 8.3, Node.js: 20, Python: 3.12, Go: 1.22
+# PostgreSQL: 16, MySQL: 8.0
+```
+
+### Configuration séparée (alternative)
+
+Si vous préférez configurer par étapes :
+
+```bash
+# D'abord le backend et la DB
+make switch BACKEND=python DB=pgsql
+
+# Puis les versions si besoin
+make set-version BACKEND_VERSION=3.11 DB_VERSION=15
+
+# Enfin le serveur web séparément
+make switch-webserver WEBSERVER=nginx
+
+# Ou activer/désactiver Mailpit
+make enable-mailpit  # ou make disable-mailpit
+```
 
 ---
 
@@ -306,44 +348,18 @@ docker-compose logs db
 
 ---
 
-## 🎯 Cas d'usage
-
-### API REST en PHP
-
-```bash
-make apache
-# Développer dans api/index.php
-```
-
-### Application Node.js
-
-```bash
-make switch BACKEND=node DB=mysql
-make nginx
-# Développer dans api/index.js
-```
-
-### Microservice Python
-
-```bash
-make switch BACKEND=python DB=postgres
-make apache
-# Développer dans api/main.py
-```
-
-### Service Go
-
-```bash
-make switch BACKEND=go DB=mysql
-make nginx
-# Développer dans api/main.go
-```
-
----
-
 ## 📜 Licence
 
 MIT License - Libre d'utilisation, modification et distribution.
+
+---
+
+## 💡 Conseils pour le template
+
+-   **Commitez après cleanup** : `git add . && git commit -m "Setup project with PHP+Apache+MySQL"`
+-   **Modifiez le README** : Adaptez-le à votre projet spécifique après cleanup
+-   **Configurez Git** : Supprimez les références au template si nécessaire
+-   **Personnalisez** : Modifiez les fichiers de configuration selon vos besoins
 
 ---
 
@@ -356,3 +372,84 @@ make status  # État des services
 ```
 
 **Ports par défaut** : Apache/Nginx (80), Mailpit (8025), PostgreSQL (5432), MySQL (3306)
+
+---
+
+## 🔢 Gestion des versions
+
+### Configurer les versions des langages et bases de données
+
+```bash
+# Changer la version du backend
+make set-version BACKEND_VERSION=8.2
+
+# Changer backend et base de données
+make set-version BACKEND_VERSION=20 DB_VERSION=15
+
+# Exemples de versions supportées
+make set-version BACKEND_VERSION=3.11    # Python 3.11
+make set-version BACKEND_VERSION=1.21    # Go 1.21
+make set-version BACKEND_VERSION=18      # Node.js 18
+make set-version BACKEND_VERSION=8.1     # PHP 8.1
+```
+
+### Versions disponibles par technologie
+
+| **Backend** | **Versions supportées** |
+| ----------- | ----------------------- |
+| **PHP**     | 8.3, 8.2, 8.1, 8.0, 7.4 |
+| **Node.js** | 20, 18, 16, 14          |
+| **Python**  | 3.12, 3.11, 3.10, 3.9   |
+| **Go**      | 1.22, 1.21, 1.20, 1.19  |
+
+| **Base de données** | **Versions supportées** |
+| ------------------- | ----------------------- |
+| **PostgreSQL**      | 16, 15, 14, 13, 12      |
+| **MySQL**           | 8.0, 5.7                |
+
+### Configuration actuelle
+
+```bash
+make config
+# ⚙️  Configuration actuelle :
+#    Backend: node 18
+#    Serveur web: nginx
+#    Base de données: postgres 16
+#    Mailpit: true
+```
+
+---
+
+## 📧 Gestion de Mailpit (SMTP local)
+
+### Activer/Désactiver Mailpit
+
+```bash
+# Activer Mailpit pour les tests d'emails
+make enable-mailpit
+
+# Désactiver Mailpit pour économiser les ressources
+make disable-mailpit
+
+# Vérifier l'état de Mailpit
+make config
+```
+
+### Utilisation de Mailpit
+
+Quand Mailpit est activé :
+
+-   **Interface web** : http://localhost:8025
+-   **Serveur SMTP** : localhost:1025
+-   **Capture tous les emails** envoyés par votre application
+-   **Interface moderne** pour consulter, tester et déboguer les emails
+
+### Configuration SMTP dans votre application
+
+```env
+MAIL_HOST=smtp
+MAIL_PORT=1025
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=null
+```

@@ -1,4 +1,5 @@
-FROM golang:1.22
+ARG GO_VERSION=1.22
+FROM golang:${GO_VERSION}
 
 WORKDIR /app
 COPY ./api /app

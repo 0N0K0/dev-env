@@ -1,4 +1,5 @@
-FROM node:20
+ARG NODE_VERSION=20
+FROM node:${NODE_VERSION}
 
 WORKDIR /app
 COPY ./api /app

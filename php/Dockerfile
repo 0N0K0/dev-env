@@ -1,4 +1,5 @@
-FROM php:8.3-fpm
+ARG PHP_VERSION=8.3
+FROM php:${PHP_VERSION}-fpm
 
 RUN apt-get update && apt-get install -y \
     git zip unzip libzip-dev \

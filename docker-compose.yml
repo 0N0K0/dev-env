@@ -20,6 +20,11 @@ services:
         build:
             context: .
             dockerfile: ./${BACKEND}/Dockerfile
+            args:
+                PHP_VERSION: ${BACKEND_VERSION}
+                NODE_VERSION: ${BACKEND_VERSION}
+                PYTHON_VERSION: ${BACKEND_VERSION}
+                GO_VERSION: ${BACKEND_VERSION}
         volumes:
             - ./api:/var/www/html # pour PHP
             - ./api:/app # pour Node.js, Python, Go
@@ -37,7 +42,7 @@ services:
             - db
 
     db:
-        image: ${DB_TYPE:-postgres}:latest
+        image: postgres:${DB_VERSION}
         container_name: db
         environment:
             POSTGRES_DB: ${DB_NAME}
@@ -48,16 +53,10 @@ services:
             MYSQL_PASSWORD: ${DB_PASSWORD}
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
         volumes:
-            - db:/var/lib/${DB_TYPE}/data
+            - db:/var/lib/postgresql/data
         ports:
             - '5432:5432'
             - '3306:3306'
-
-    smtp:
-        image: axllent/mailpit
-        ports:
-            - '8025:8025'
-            - '1025:1025'
 
 volumes:
     db:
