@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+    # Service Web (Apache ou Nginx)
+    web:
+        build:
+            context: .
+            dockerfile: ./${WEBSERVER}/Dockerfile
+        volumes:
+            - ./api:/var/www/html
+        ports:
+            - '80:80'
+        depends_on:
+            - api
+        environment:
+            - BACKEND=${BACKEND}
+
+    # Service API Backend (PHP, Node.js, Python, Go)
+    api:
+        build:
+            context: .
+            dockerfile: ./${BACKEND}/Dockerfile
+        volumes:
+            - ./api:/var/www/html # pour PHP
+            - ./api:/app # pour Node.js, Python, Go
+        expose:
+            - '80'
+            - '9000' # PHP-FPM port
+        environment:
+            PHP_ENABLE_XDEBUG: 1
+            DB_TYPE: ${DB_TYPE}
+            DB_HOST: db
+            DB_NAME: ${DB_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+        depends_on:
+            - db
+
+    db:
+        image: ${DB_TYPE:-postgres}:latest
+        container_name: db
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - db:/var/lib/${DB_TYPE}/data
+        ports:
+            - '5432:5432'
+            - '3306:3306'
+
+    smtp:
+        image: axllent/mailpit
+        ports:
+            - '8025:8025'
+            - '1025:1025'
+
+volumes:
+    db:
