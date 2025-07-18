@@ -212,7 +212,7 @@ DB_PASSWORD=root
 -   **Serveur web** : Apache
 -   **Base de données** : PostgreSQL
 
-### 🎯 Exemples de configurations
+### Exemples de configurations
 
 #### API REST PHP classique
 
