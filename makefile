@@ -158,58 +158,8 @@ clean-project:
 	@if [ "$(USE_MAILPIT)" = "true" ]; then echo "   Mailpit: activé"; else echo "   Mailpit: désactivé"; fi
 	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo "   WebSocket: activé"; else echo "   WebSocket: désactivé"; fi
 	@echo ""
-	@echo "🗑️  Suppression des backends non utilisés..."
-	@for backend in php node go python; do \
-		if [ "$$backend" != "$(BACKEND)" ]; then \
-			echo "   Suppression: $$backend/"; \
-			rm -rf $$backend/; \
-		fi \
-	done
-	@echo "🗑️  Suppression des serveurs web non utilisés..."
-	@for webserver in apache nginx; do \
-		if [ "$$webserver" != "$(WEBSERVER)" ]; then \
-			echo "   Suppression: $$webserver/"; \
-			rm -rf $$webserver/; \
-		fi \
-	done
-	@echo "🗑️  Nettoyage des fichiers de configuration nginx..."
-	@if [ "$(WEBSERVER)" = "nginx" ]; then \
-		rm -f nginx/nginx-php.conf nginx/nginx-default.conf; \
-		echo "   Suppression: nginx-php.conf, nginx-default.conf (configurations template)"; \
-	fi
-	@echo "🗑️  Nettoyage des fichiers API non utilisés..."
-	@cd api && for file in index.php index.js main.py main.go; do \
-		case "$(BACKEND)" in \
-			php) [ "$$file" != "index.php" ] && rm -f $$file;; \
-			node) [ "$$file" != "index.js" ] && rm -f $$file;; \
-			python) [ "$$file" != "main.py" ] && rm -f $$file;; \
-			go) [ "$$file" != "main.go" ] && rm -f $$file;; \
-		esac \
-	done
-	@echo "📝 Mise à jour du docker-compose.yml..."
+	@echo "� Délégation du nettoyage au script Python..."
 	@python3 clean_project.py $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
-	@echo "📝 Mise à jour du Makefile..."
-	@sed -i.bak '/^BACKENDS\|^WEBSERVERS\|^DBS/d' makefile
-	@sed -i.bak '/^switch:/,/^$$/d' makefile
-	@sed -i.bak '/^clean-project:/,/^$$/d' makefile
-	@sed -i.bak 's/switch clean-project //' makefile
-	@rm -f makefile.bak
-	@rm -f clean_project.py
-	@echo "✅ Nettoyage terminé !"
-	@echo ""
-	@echo "📋 Fichiers conservés :"
-	@echo "   - $(BACKEND)/ (backend)"
-	@echo "   - $(WEBSERVER)/ (serveur web)"
-	@echo "   - api/ (code source simplifié)"
-	@if [ "$(USE_MAILPIT)" = "true" ]; then echo "   - docker-compose.mailpit.yml (Mailpit activé)"; fi
-	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo "   - websocket/ et docker-compose.websocket.yml (WebSocket activé)"; fi
-	@echo "   - .env, docker-compose.yml, makefile (simplifiés)"
-	@echo ""
-	@echo "🚀 Votre projet est maintenant prêt avec $(BACKEND) + $(WEBSERVER) + $(DB_TYPE)"
-	@if [ "$(USE_MAILPIT)" = "true" ] || [ "$(USE_WEBSOCKET)" = "true" ]; then echo -n " + services optionnels :"; fi
-	@if [ "$(USE_MAILPIT)" = "true" ]; then echo -n " Mailpit"; fi
-	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo -n " WebSocket"; fi
-	@echo " !"
 
 help:
 	@echo ""
@@ -221,7 +171,7 @@ help:
 	@echo "  make status    # Voir l'état des conteneurs"
 	@echo "  make logs      # Voir les logs des conteneurs"
 	@echo "  make config    # Afficher la configuration actuelle"
-	@echo "  make -project  # Nettoyer le template (supprimer les éléments non utilisés)"
+	@echo "  make clean-project # Nettoyer le template (supprimer les éléments non utilisés)"
 	@echo "  make help      # Afficher cette aide"
 	@echo ""
 	@echo "📦 Backends disponibles : $(BACKENDS)"
