@@ -358,6 +358,12 @@ docker-compose logs db
 
 ---
 
+## 📜 Auteur
+
+@NKoelblen _alias_ @0N0K0
+
+---
+
 ## 📜 Licence
 
 MIT License - Libre d'utilisation, modification et distribution.
