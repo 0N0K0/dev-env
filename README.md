@@ -358,7 +358,7 @@ docker-compose logs db
 
 ---
 
-## 📜 Auteur
+## 😉 Auteur
 
 [@NKoelblen](https://github.com/NKoelblen) _alias_ [@0N0K0](https://github.com/0N0K0)
 
