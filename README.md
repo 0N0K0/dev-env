@@ -31,7 +31,7 @@ Un **template repository** Docker Compose pour créer rapidement des environneme
 -   🎯 **Commandes** : Makefile intégré
 -   🧹 **Nettoyage automatique** : Supprime les éléments non utilisés
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -80,7 +80,7 @@ make start
 -   **Application** : http://localhost
 -   **Mailpit** : http://localhost:8025
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -91,7 +91,7 @@ make start
 -   **Configurez Git** : Supprimez les références au template si nécessaire
 -   **Personnalisez** : Modifiez les fichiers de configuration selon vos besoins
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -113,7 +113,7 @@ make start
 -   **db** : Base de données (PostgreSQL/MySQL)
 -   **smtp** : Serveur email local (Mailpit)
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -153,7 +153,7 @@ dev-env/
     └── main.go              # Point d'entrée Go
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -167,7 +167,7 @@ dev-env/
 | **PostgreSQL**  | localhost:5432        | Base de données       |
 | **MySQL**       | localhost:3306        | Base de données       |
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -197,7 +197,7 @@ make status    # État des conteneurs
 make logs      # Logs en temps réel
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -261,7 +261,7 @@ make clean
 make start
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -292,7 +292,7 @@ make start
 -   **MySQL** : Port 3306
 -   **Persistence** : Volumes Docker
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -317,7 +317,7 @@ MAIL_PASSWORD=
 MAIL_ENCRYPTION=null
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -348,7 +348,7 @@ mon-projet/
     └── index.php
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -379,7 +379,7 @@ docker-compose logs api
 docker-compose logs db
 ```
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -387,7 +387,7 @@ docker-compose logs db
 
 [@NKoelblen](https://github.com/NKoelblen) _alias_ [@0N0K0](https://github.com/0N0K0)
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
 
@@ -395,6 +395,6 @@ docker-compose logs db
 
 MIT License - Libre d'utilisation, modification et distribution.
 
-<a href="#-sommaire" align="right">⬆️</a>
+<div align="right"><a href="#-sommaire">⬆️</a></div>
 
 ---
