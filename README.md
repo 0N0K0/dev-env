@@ -11,7 +11,7 @@ Un **template repository** Docker Compose pour créer rapidement des environneme
 -   [Structure du projet](#-structure-du-projet)
 -   [Accès aux services](#-accès-aux-services)
 -   [Commandes disponibles](#-commandes-disponibles)
--   [Configuration](#EF%B8%8F-configuration)
+-   [Configuration](#%EF%B8%8F-configuration)
 -   [Technologies incluses](#-technologies-incluses)
 -   [Gestion de Mailpit (SMTP local)](#-gestion-de-mailpit-smtp-local)
 -   [Que fait `make clean` ?](#-que-fait-make-clean-)
