@@ -1,0 +1,42 @@
+name: Sync Labels
+
+on:
+    workflow_dispatch:
+
+jobs:
+    sync-labels:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Setup GitHub CLI
+              uses: cli/gh-action@v2
+              with:
+                  version: latest
+
+            - name: Remove all existing labels
+              run: |
+                  echo "Suppression des labels existants dans $GITHUB_REPOSITORY..."
+                  for label in $(gh label list -R "$GITHUB_REPOSITORY" --json name -q '.[].name'); do
+                    gh label delete "$label" -R "$GITHUB_REPOSITORY" -y || true
+                  done
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Sync labels from template
+              run: |
+                  TEMPLATE_REPO="mon-org/template-repo"
+
+                  echo "Récupération des labels depuis $TEMPLATE_REPO..."
+                  for label in $(gh label list -R "$TEMPLATE_REPO" --json name,color,description -q '.[] | @base64'); do
+                    _jq() {
+                      echo "$label" | base64 --decode | jq -r "$1"
+                    }
+
+                    name=$(_jq '.name')
+                    color=$(_jq '.color')
+                    description=$(_jq '.description')
+
+                    echo "Création du label : $name"
+                    gh label create "$name" --color "$color" --description "$description" -R "$GITHUB_REPOSITORY" || true
+                  done
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
