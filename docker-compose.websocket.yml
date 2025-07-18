@@ -23,4 +23,8 @@ services:
         depends_on:
             - db
         networks:
-            - default
+            - dev-env
+
+networks:
+    dev-env:
+        external: false
