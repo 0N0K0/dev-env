@@ -158,8 +158,8 @@ clean-project:
 	@if [ "$(USE_MAILPIT)" = "true" ]; then echo "   Mailpit: activé"; else echo "   Mailpit: désactivé"; fi
 	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo "   WebSocket: activé"; else echo "   WebSocket: désactivé"; fi
 	@echo ""
-	@echo "� Délégation du nettoyage au script Python..."
-	@python3 clean_project.py $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
+	@echo "🔧 Délégation du nettoyage au script shell..."
+	@bash clean_project.sh $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
 
 help:
 	@echo ""
