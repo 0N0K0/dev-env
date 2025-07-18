@@ -360,7 +360,7 @@ docker-compose logs db
 
 ## 📜 Auteur
 
-@NKoelblen _alias_ @0N0K0
+[@NKoelblen](https://github.com/NKoelblen) _alias_ [@0N0K0](https://github.com/0N0K0)
 
 ---
 
