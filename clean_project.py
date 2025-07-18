@@ -83,7 +83,46 @@ def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
         print(f"   ❌ Erreur lors de la sauvegarde: {e}")
         return
         
-    # 8. Gérer les services optionnels
+    # 8. Nettoyer les fichiers de dépendances non utilisés dans /api
+    print("   🗑️  Nettoyage des fichiers de dépendances dans /api...")
+    
+    # Fichiers à supprimer selon le backend
+    dependency_files = {
+        'php': ['go.mod', 'go.sum', 'package.json', 'package-lock.json', 'requirements.txt'],
+        'node': ['go.mod', 'go.sum', 'requirements.txt', 'composer.json', 'composer.lock'],
+        'python': ['go.mod', 'go.sum', 'package.json', 'package-lock.json', 'composer.json', 'composer.lock'],
+        'go': ['package.json', 'package-lock.json', 'requirements.txt', 'composer.json', 'composer.lock']
+    }
+    
+    # Dossiers à supprimer selon le backend
+    dependency_dirs = {
+        'php': ['node_modules', '__pycache__'],
+        'node': ['__pycache__', 'vendor'],
+        'python': ['node_modules', 'vendor'],
+        'go': ['node_modules', '__pycache__', 'vendor']
+    }
+    
+    if backend in dependency_files:
+        for file_to_remove in dependency_files[backend]:
+            file_path = os.path.join('api', file_to_remove)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"     Suppression: api/{file_to_remove}")
+                except Exception as e:
+                    print(f"     ❌ Erreur suppression api/{file_to_remove}: {e}")
+    
+    if backend in dependency_dirs:
+        for dir_to_remove in dependency_dirs[backend]:
+            dir_path = os.path.join('api', dir_to_remove)
+            if os.path.exists(dir_path):
+                try:
+                    shutil.rmtree(dir_path)
+                    print(f"     Suppression: api/{dir_to_remove}/")
+                except Exception as e:
+                    print(f"     ❌ Erreur suppression api/{dir_to_remove}/: {e}")
+        
+    # 9. Gérer les services optionnels
     
     # Mailpit
     if use_mailpit == 'false':
