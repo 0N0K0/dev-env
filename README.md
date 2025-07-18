@@ -93,7 +93,7 @@ make start
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Apache    │     │             │     │             │
-│     ou      │───▶ │   PHP-FPM   │───▶ │ PostgreSQL  │
+│     ou      │───▶│   PHP-FPM   │───▶│ PostgreSQL  │
 │   Nginx     │     │ Node/Py/Go  │     │   MySQL     │
 │  (port 80)  │     │             │     │             │
 └─────────────┘     └─────────────┘     └─────────────┘
