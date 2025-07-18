@@ -14,7 +14,7 @@ Un **template repository** Docker Compose pour créer rapidement des environneme
 -   [Configuration](#%EF%B8%8F-configuration)
 -   [Technologies incluses](#-technologies-incluses)
 -   [Gestion de Mailpit (SMTP local)](#-gestion-de-mailpit-smtp-local)
--   [Que fait `make clean` ?](#-que-fait-make-clean-)
+-   [Que fait `make clean-project` ?](#-que-fait-make-clean-project-)
 -   [Support](#-support)
 -   [Auteur](#-auteur)
 -   [Licence](#-licence)
@@ -66,7 +66,7 @@ make switch BACKEND=python DB=pgsql  # Juste backend + DB
 ### 3. Nettoyer le template (supprimer les éléments non utilisés)
 
 ```bash
-make clean
+make clean-project
 ```
 
 ### 4. Démarrer l'environnement
@@ -86,8 +86,8 @@ make start
 
 ## 💡 Conseils pour le template
 
--   **Commitez après clean** : `git add . && git commit -m "Setup project with PHP+Apache+MySQL"`
--   **Modifiez le README** : Adaptez-le à votre projet spécifique après clean
+-   **Commitez après clean-project** : `git add . && git commit -m "Setup project with PHP+Apache+MySQL"`
+-   **Modifiez le README** : Adaptez-le à votre projet spécifique après clean-project
 -   **Configurez Git** : Supprimez les références au template si nécessaire
 -   **Personnalisez** : Modifiez les fichiers de configuration selon vos besoins
 
@@ -178,7 +178,7 @@ dev-env/
 ```bash
 make config    # Affiche la configuration actuelle
 make switch [BACKEND=<php|node|go|python>] [BACKEND_VERSION=<ver>] [DB=<mysql|postgres>] [DB_VERSION=<ver>] [WEBSERVER=<apache|nginx>] [MAILPIT=<true|false>] [WEBSOCKET=<true|false>] [WEBSOCKET_TYPE=<socketio|native>]    # Configure le projet
-make clean    # Nettoie le template pour un projet spécifique
+make clean-project    # Nettoie le template pour un projet spécifique
 ```
 
 ### Gestion des conteneurs
@@ -217,7 +217,7 @@ DB_TYPE=postgres
 
 # Paramètres BDD
 DB_NAME=database
-DB_USER=root
+DB_USER=admin
 DB_PASSWORD=root
 ```
 
@@ -233,7 +233,7 @@ DB_PASSWORD=root
 
 ```bash
 make switch BACKEND=php BACKEND_VERSION=8.3 DB=mysql DB_VERSION=8.0 WEBSERVER=apache
-make clean
+make clean-project
 make start
 ```
 
@@ -241,7 +241,7 @@ make start
 
 ```bash
 make switch BACKEND=node BACKEND_VERSION=20 DB=pgsql DB_VERSION=16 WEBSERVER=nginx
-make clean
+make clean-project
 make start
 ```
 
@@ -249,7 +249,7 @@ make start
 
 ```bash
 make switch BACKEND=python BACKEND_VERSION=3.12 DB=pgsql DB_VERSION=15 WEBSERVER=apache
-make clean
+make clean-project
 make start
 ```
 
@@ -257,7 +257,7 @@ make start
 
 ```bash
 make switch BACKEND=go BACKEND_VERSION=1.22 DB=mysql DB_VERSION=8.0 WEBSERVER=nginx
-make clean
+make clean-project
 make start
 ```
 
@@ -321,9 +321,9 @@ MAIL_ENCRYPTION=null
 
 ---
 
-## 🧹 Que fait `make clean` ?
+## 🧹 Que fait `make clean-project` ?
 
-La commande `make clean` adapte le template à votre configuration spécifique :
+La commande `make clean-project` adapte le template à votre configuration spécifique :
 
 -   ✅ **Supprime les dossiers** des backends non utilisés (ex: si vous utilisez PHP, supprime `node/`, `python/`, `go/`)
 -   ✅ **Supprime les dossiers** des serveurs web non utilisés (ex: si vous utilisez Apache, supprime `nginx/`)
@@ -332,7 +332,7 @@ La commande `make clean` adapte le template à votre configuration spécifique :
 -   ✅ **Nettoie le Makefile** (supprime les commandes de template)
 -   ✅ **Adapte les variables d'environnement** à votre configuration
 
-### Structure après clean
+### Structure après clean-project
 
 Pour un projet **PHP + Apache + MySQL**, vous aurez :
 

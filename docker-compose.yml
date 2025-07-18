@@ -56,10 +56,9 @@ services:
             MYSQL_PASSWORD: ${DB_PASSWORD}
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
         volumes:
-            - db:/var/lib/${DB_TYPE}/data
+            - db:${DB_PATH}
         ports:
-            - '5432:5432'
-            - '3306:3306'
+            - ${DB_PORT}:${DB_PORT}
         networks:
             - dev-env
 

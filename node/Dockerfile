@@ -3,5 +3,5 @@ FROM node:${NODE_VERSION}
 
 WORKDIR /app
 COPY ./api /app
-RUN npm install
-CMD ["npm", "run", "dev"]
+
+CMD ["sh", "-c", "npm install && npm run dev"]

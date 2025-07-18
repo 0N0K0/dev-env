@@ -8,7 +8,6 @@ WORKDIR /app
 
 # Installation des dépendances selon le type
 COPY websocket/package*.json ./
-RUN npm install
 
 # Copier le code source
 COPY websocket/ ./
@@ -17,4 +16,4 @@ COPY websocket/ ./
 EXPOSE 3001
 
 # Commande par défaut
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npm install && npm run dev"]
