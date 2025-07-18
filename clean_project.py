@@ -180,23 +180,34 @@ def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
             dir_path = os.path.join('api', dir_to_remove)
             if os.path.exists(dir_path):
                 try:
-                    # Modifier les permissions pour permettre la suppression
-                    def remove_readonly(func, path, _):
+                    # Première tentative : suppression directe avec gestion des permissions
+                    def remove_readonly(func, path, exc_info):
                         """Callback pour forcer la suppression des fichiers en lecture seule"""
-                        os.chmod(path, 0o777)
-                        func(path)
+                        try:
+                            os.chmod(path, 0o777)
+                            func(path)
+                        except:
+                            pass
                     
                     shutil.rmtree(dir_path, onerror=remove_readonly)
                     print(f"   Suppression: api/{dir_to_remove}/")
                 except Exception as e:
                     print(f"   ❌ Erreur suppression api/{dir_to_remove}/: {e}")
-                    # Tentative avec sudo si disponible (WSL/Linux)
+                    # Deuxième tentative : modification récursive des permissions puis suppression
                     try:
-                        import subprocess
-                        subprocess.run(['sudo', 'rm', '-rf', dir_path], check=True)
-                        print(f"   ✅ Suppression forcée: api/{dir_to_remove}/ (sudo)")
-                    except:
-                        print(f"   ⚠️  Impossible de supprimer api/{dir_to_remove}/ - supprimez manuellement")
+                        print(f"   � Modification des permissions pour api/{dir_to_remove}/...")
+                        for root, dirs, files in os.walk(dir_path):
+                            for d in dirs:
+                                os.chmod(os.path.join(root, d), 0o777)
+                            for f in files:
+                                os.chmod(os.path.join(root, f), 0o777)
+                        os.chmod(dir_path, 0o777)
+                        shutil.rmtree(dir_path)
+                        print(f"   ✅ Suppression réussie: api/{dir_to_remove}/")
+                    except Exception as perm_error:
+                        print(f"   ❌ Impossible de supprimer api/{dir_to_remove}/")
+                        print(f"   💡 Exécutez manuellement: sudo rm -rf api/{dir_to_remove}/")
+                        # Ne pas bloquer le script, continuer avec les autres suppressions
         
     # 7. Gérer les services optionnels
     
