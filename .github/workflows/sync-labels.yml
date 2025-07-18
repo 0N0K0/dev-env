@@ -3,6 +3,11 @@ name: Sync Labels
 on:
     workflow_dispatch:
 
+permissions:
+  contents: write
+  issues: write
+  repository-projects: write
+  
 jobs:
   sync-labels:
     runs-on: ubuntu-latest
@@ -28,8 +33,9 @@ jobs:
       - name: Remove all existing labels
         run: |
           echo "Suppression des labels existants dans $GITHUB_REPOSITORY..."
-          for label in $(gh label list -R "$GITHUB_REPOSITORY" --json name -q '.[].name'); do
-            gh label delete "$label" -R "$GITHUB_REPOSITORY" -y || true
+          gh label list -R "$GITHUB_REPOSITORY" --json name | jq -r '.[].name' | while IFS= read -r label; do
+              echo "Suppression du label : \"$label\""
+              gh label delete "$label" -R "$GITHUB_REPOSITORY" --yes || echo "Label \"$label\" déjà supprimé ou introuvable"
           done
 
       - name: Sync labels from template
