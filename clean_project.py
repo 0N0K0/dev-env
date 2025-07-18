@@ -117,10 +117,23 @@ def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
             dir_path = os.path.join('api', dir_to_remove)
             if os.path.exists(dir_path):
                 try:
-                    shutil.rmtree(dir_path)
+                    # Modifier les permissions pour permettre la suppression
+                    def remove_readonly(func, path, _):
+                        """Callback pour forcer la suppression des fichiers en lecture seule"""
+                        os.chmod(path, 0o777)
+                        func(path)
+                    
+                    shutil.rmtree(dir_path, onerror=remove_readonly)
                     print(f"     Suppression: api/{dir_to_remove}/")
                 except Exception as e:
                     print(f"     ❌ Erreur suppression api/{dir_to_remove}/: {e}")
+                    # Tentative avec sudo si disponible (WSL/Linux)
+                    try:
+                        import subprocess
+                        subprocess.run(['sudo', 'rm', '-rf', dir_path], check=True)
+                        print(f"     ✅ Suppression forcée: api/{dir_to_remove}/ (sudo)")
+                    except:
+                        print(f"     ⚠️  Impossible de supprimer api/{dir_to_remove}/ - supprimez manuellement")
         
     # 9. Gérer les services optionnels
     
