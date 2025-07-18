@@ -8,7 +8,6 @@ import re
 import sys
 import os
 import shutil
-import subprocess
 
 def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
     """Nettoie complètement le projet selon la configuration"""
@@ -166,9 +165,6 @@ def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
         'go': ['node_modules', '__pycache__', 'vendor']
     }
     
-    print(f"   Backend actuel: {backend}")
-    print(f"   Dossiers à supprimer pour {backend}: {dependency_dirs.get(backend, [])}")
-    
     if backend in dependency_files:
         for file_to_remove in dependency_files[backend]:
             file_path = os.path.join('api', file_to_remove)
@@ -182,31 +178,36 @@ def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
     if backend in dependency_dirs:
         for dir_to_remove in dependency_dirs[backend]:
             dir_path = os.path.join('api', dir_to_remove)
-            print(f"   Vérification: {dir_path} existe = {os.path.exists(dir_path)}")
             if os.path.exists(dir_path):
                 try:
-                    # Première tentative : suppression directe simple
-                    shutil.rmtree(dir_path)
-                    print(f"   ✅ Suppression: api/{dir_to_remove}/")
+                    # Première tentative : suppression directe avec gestion des permissions
+                    def remove_readonly(func, path, exc_info):
+                        """Callback pour forcer la suppression des fichiers en lecture seule"""
+                        try:
+                            os.chmod(path, 0o777)
+                            func(path)
+                        except:
+                            pass
+                    
+                    shutil.rmtree(dir_path, onerror=remove_readonly)
+                    print(f"   Suppression: api/{dir_to_remove}/")
                 except Exception as e:
                     print(f"   ❌ Erreur suppression api/{dir_to_remove}/: {e}")
-                    # Proposition d'utiliser sudo de manière interactive
-                    print(f"   💡 Le dossier api/{dir_to_remove}/ nécessite des permissions administrateur")
-                    response = input(f"   Utiliser sudo pour supprimer api/{dir_to_remove}/ ? (o/n): ").lower().strip()
-                    
-                    if response in ['o', 'oui', 'y', 'yes']:
-                        try:
-                            print(f"   🔐 Suppression avec sudo...")
-                            result = subprocess.run(['sudo', 'rm', '-rf', dir_path], check=True)
-                            print(f"   ✅ Suppression réussie avec sudo: api/{dir_to_remove}/")
-                        except subprocess.CalledProcessError as sudo_error:
-                            print(f"   ❌ Échec sudo: {sudo_error}")
-                        except Exception as sudo_error:
-                            print(f"   ❌ Erreur sudo: {sudo_error}")
-                    else:
-                        print(f"   ⚠️  Dossier api/{dir_to_remove}/ conservé (suppression refusée)")
-            else:
-                print(f"   ℹ️  Dossier api/{dir_to_remove}/ n'existe pas")
+                    # Deuxième tentative : modification récursive des permissions puis suppression
+                    try:
+                        print(f"   � Modification des permissions pour api/{dir_to_remove}/...")
+                        for root, dirs, files in os.walk(dir_path):
+                            for d in dirs:
+                                os.chmod(os.path.join(root, d), 0o777)
+                            for f in files:
+                                os.chmod(os.path.join(root, f), 0o777)
+                        os.chmod(dir_path, 0o777)
+                        shutil.rmtree(dir_path)
+                        print(f"   ✅ Suppression réussie: api/{dir_to_remove}/")
+                    except Exception as perm_error:
+                        print(f"   ❌ Impossible de supprimer api/{dir_to_remove}/")
+                        print(f"   💡 Exécutez manuellement: sudo rm -rf api/{dir_to_remove}/")
+                        # Ne pas bloquer le script, continuer avec les autres suppressions
         
     # 7. Gérer les services optionnels
     
