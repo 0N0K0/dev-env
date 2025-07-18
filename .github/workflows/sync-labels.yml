@@ -4,42 +4,41 @@ on:
     workflow_dispatch:
 
 jobs:
-    sync-labels:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Setup GitHub CLI
-              uses: actions/setup-gh@v4
+  sync-labels:
+    runs-on: ubuntu-latest
 
-            - name: Authenticate GitHub CLI
-              run: gh auth setup-git
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt-get update
+          sudo apt-get install gh -y
 
-            - name: Remove all existing labels
-              run: |
-                  echo "Suppression des labels existants dans $GITHUB_REPOSITORY..."
-                  for label in $(gh label list -R "$GITHUB_REPOSITORY" --json name -q '.[].name'); do
-                    gh label delete "$label" -R "$GITHUB_REPOSITORY" -y || true
-                  done
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-            - name: Sync labels from template
-              run: |
-                  TEMPLATE_REPO="mon-org/template-repo"
+      - name: Remove all existing labels
+        run: |
+          echo "Suppression des labels existants dans $GITHUB_REPOSITORY..."
+          for label in $(gh label list -R "$GITHUB_REPOSITORY" --json name -q '.[].name'); do
+            gh label delete "$label" -R "$GITHUB_REPOSITORY" -y || true
+          done
 
-                  echo "Récupération des labels depuis $TEMPLATE_REPO..."
-                  for label in $(gh label list -R "$TEMPLATE_REPO" --json name,color,description -q '.[] | @base64'); do
-                    _jq() {
-                      echo "$label" | base64 --decode | jq -r "$1"
-                    }
+      - name: Sync labels from template
+        run: |
+          TEMPLATE_REPO="ton-org/ton-template-repo"
 
-                    name=$(_jq '.name')
-                    color=$(_jq '.color')
-                    description=$(_jq '.description')
+          echo "Récupération des labels depuis $TEMPLATE_REPO..."
+          for label in $(gh label list -R "$TEMPLATE_REPO" --json name,color,description -q '.[] | @base64'); do
+            _jq() {
+              echo "$label" | base64 --decode | jq -r "$1"
+            }
 
-                    echo "Création du label : $name"
-                    gh label create "$name" --color "$color" --description "$description" -R "$GITHUB_REPOSITORY" || true
-                  done
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            name=$(_jq '.name')
+            color=$(_jq '.color')
+            description=$(_jq '.description')
+
+            echo "Création du label : $name"
+            gh label create "$name" --color "$color" --description "$description" -R "$GITHUB_REPOSITORY" || true
+          done
