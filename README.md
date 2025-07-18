@@ -31,7 +31,9 @@ Un **template repository** Docker Compose pour créer rapidement des environneme
 -   🎯 **Commandes** : Makefile intégré
 -   🧹 **Nettoyage automatique** : Supprime les éléments non utilisés
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🚀 Utilisation du template
 
@@ -78,7 +80,9 @@ make start
 -   **Application** : http://localhost
 -   **Mailpit** : http://localhost:8025
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 💡 Conseils pour le template
 
@@ -87,7 +91,9 @@ make start
 -   **Configurez Git** : Supprimez les références au template si nécessaire
 -   **Personnalisez** : Modifiez les fichiers de configuration selon vos besoins
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🏗️ Architecture
 
@@ -107,7 +113,9 @@ make start
 -   **db** : Base de données (PostgreSQL/MySQL)
 -   **smtp** : Serveur email local (Mailpit)
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 📁 Structure du projet
 
@@ -145,7 +153,9 @@ dev-env/
     └── main.go              # Point d'entrée Go
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🌐 Accès aux services
 
@@ -157,7 +167,9 @@ dev-env/
 | **PostgreSQL**  | localhost:5432        | Base de données       |
 | **MySQL**       | localhost:3306        | Base de données       |
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 📋 Commandes disponibles
 
@@ -185,7 +197,9 @@ make status    # État des conteneurs
 make logs      # Logs en temps réel
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## ⚙️ Configuration
 
@@ -247,7 +261,9 @@ make clean
 make start
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🔧 Technologies incluses
 
@@ -276,7 +292,9 @@ make start
 -   **MySQL** : Port 3306
 -   **Persistence** : Volumes Docker
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 📧 Gestion de Mailpit (SMTP local)
 
@@ -299,7 +317,9 @@ MAIL_PASSWORD=
 MAIL_ENCRYPTION=null
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🧹 Que fait `make clean` ?
 
@@ -328,7 +348,9 @@ mon-projet/
     └── index.php
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 🆘 Support
 
@@ -357,16 +379,22 @@ docker-compose logs api
 docker-compose logs db
 ```
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 😉 Auteur
 
 [@NKoelblen](https://github.com/NKoelblen) _alias_ [@0N0K0](https://github.com/0N0K0)
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
 
 ## 📜 Licence
 
 MIT License - Libre d'utilisation, modification et distribution.
 
-## [Retour au sommaire](#-sommaire)
+[Retour au sommaire](#-sommaire)
+
+---
