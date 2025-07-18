@@ -9,7 +9,7 @@ import sys
 import os
 import shutil
 
-def cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websocket=None):
+def clean_project(backend, webserver, db_type, use_mailpit, use_websocket=None):
     """Nettoie le docker-compose.yml selon la configuration"""
     
     print(f"🔧 Nettoyage pour: {backend} + {webserver} + {db_type}")
@@ -82,7 +82,7 @@ def cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websock
     except Exception as e:
         print(f"   ❌ Erreur lors de la sauvegarde: {e}")
         return
-    
+        
     # 8. Gérer les services optionnels
     
     # Mailpit
@@ -115,8 +115,8 @@ def cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websock
 def main():
     """Point d'entrée principal"""
     if len(sys.argv) < 5:
-        print("Usage: cleanup_compose.py <backend> <webserver> <db_type> <use_mailpit> [use_websocket]")
-        print("Exemple: python3 cleanup_compose.py php apache postgres true false")
+        print("Usage: clean_project.py <backend> <webserver> <db_type> <use_mailpit> [use_websocket]")
+        print("Exemple: python3 clean_project.py php apache postgres true false")
         sys.exit(1)
     
     # Récupération des arguments
@@ -153,7 +153,7 @@ def main():
         sys.exit(1)
     
     # Lancement du nettoyage
-    cleanup_docker_compose(backend, webserver, db_type, use_mailpit, use_websocket)
+    clean_project(backend, webserver, db_type, use_mailpit, use_websocket)
 
 if __name__ == '__main__':
     main()

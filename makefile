@@ -172,6 +172,11 @@ clean-project:
 			rm -rf $$webserver/; \
 		fi \
 	done
+	@echo "🗑️  Nettoyage des fichiers de configuration nginx..."
+	@if [ "$(WEBSERVER)" = "nginx" ]; then \
+		rm -f nginx/nginx-php.conf nginx/nginx-default.conf; \
+		echo "   Suppression: nginx-php.conf, nginx-default.conf (configurations template)"; \
+	fi
 	@echo "🗑️  Nettoyage des fichiers API non utilisés..."
 	@cd api && for file in index.php index.js main.py main.go; do \
 		case "$(BACKEND)" in \
@@ -182,17 +187,14 @@ clean-project:
 		esac \
 	done
 	@echo "📝 Mise à jour du docker-compose.yml..."
-	@python3 cleanup_compose.py $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
+	@python3 clean_project.py $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET)
 	@echo "📝 Mise à jour du Makefile..."
 	@sed -i.bak '/^BACKENDS\|^WEBSERVERS\|^DBS/d' makefile
 	@sed -i.bak '/^switch:/,/^$$/d' makefile
-	@sed -i.bak '/^switch-webserver:/,/^$$/d' makefile
-	@sed -i.bak '/^apache:/,/^$$/d' makefile
-	@sed -i.bak '/^nginx:/,/^$$/d' makefile
-	@sed -i.bak '/^cleanup:/,/^$$/d' makefile
-	@sed -i.bak 's/switch switch-webserver apache nginx cleanup //' makefile
+	@sed -i.bak '/^clean-project:/,/^$$/d' makefile
+	@sed -i.bak 's/switch clean-project //' makefile
 	@rm -f makefile.bak
-	@rm -f cleanup_compose.py
+	@rm -f clean_project.py
 	@echo "✅ Nettoyage terminé !"
 	@echo ""
 	@echo "📋 Fichiers conservés :"
