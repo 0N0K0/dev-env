@@ -40,7 +40,7 @@ jobs:
 
       - name: Sync labels from template
         run: |
-          TEMPLATE_REPO="0N0K0/template-labels"
+          TEMPLATE_REPO="0N0K0/.github"
 
           echo "Récupération des labels depuis $TEMPLATE_REPO..."
           for label in $(gh label list -R "$TEMPLATE_REPO" --json name,color,description -q '.[] | @base64'); do
