@@ -18,13 +18,7 @@ fi
 if [ ! -f "$ENV_FILE" ]; then
     echo "📋 Initialisation du fichier $ENV_FILE depuis $TEMPLATE_FILE..."
     cp "$TEMPLATE_FILE" "$ENV_FILE"
-    echo "✅ Fichier $ENV_FILE créé"
-    
-    # Marquer le fichier pour être ignoré par Git
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-        git update-index --skip-worktree "$ENV_FILE" 2>/dev/null || true
-        echo "🔧 Fichier $ENV_FILE marqué pour ignorer les modifications locales"
-    fi
+    echo "✅ Fichier $ENV_FILE créé (ignoré par Git via .gitignore)"
 else
     echo "✅ Fichier $ENV_FILE existe déjà"
 fi
