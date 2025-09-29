@@ -63,18 +63,18 @@ echo ""
 # 1. Suppression des backends non utilisés
 echo "🗑️  Suppression des backends non utilisés..."
 for backend_dir in php node go python; do
-    if [ "$backend_dir" != "$BACKEND" ] && [ -d "$backend_dir" ]; then
-        rm -rf "$backend_dir"
-        echo "   Suppression: $backend_dir/"
+    if [ "$backend_dir" != "$BACKEND" ] && [ -d "docker/services/$backend_dir" ]; then
+        rm -rf "docker/services/$backend_dir"
+        echo "   Suppression: docker/services/$backend_dir/"
     fi
 done
 
 # 2. Suppression des serveurs web non utilisés
 echo "🗑️  Suppression des serveurs web non utilisés..."
 for webserver_dir in apache nginx; do
-    if [ "$webserver_dir" != "$WEBSERVER" ] && [ -d "$webserver_dir" ]; then
-        rm -rf "$webserver_dir"
-        echo "   Suppression: $webserver_dir/"
+    if [ "$webserver_dir" != "$WEBSERVER" ] && [ -d "docker/services/$webserver_dir" ]; then
+        rm -rf "docker/services/$webserver_dir"
+        echo "   Suppression: docker/services/$webserver_dir/"
     fi
 done
 

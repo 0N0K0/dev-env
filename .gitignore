@@ -1,3 +1,4 @@
+.env
 /api
 /app
 /docker/docker-compose.yml
@@ -7,8 +8,3 @@
 /docker/services/nginx/nginx.conf
 /docker/services/websocket/package-lock.json
 /docker/services/websocket/node_modules
-
-# Fichier de configuration local (généré depuis .env.template)
-.env
-
-

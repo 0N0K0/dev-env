@@ -7,10 +7,10 @@ FROM node:${WEBSOCKET_VERSION} as base
 WORKDIR /app
 
 # Installation des dépendances selon le type
-COPY websocket/package*.json ./
+COPY ./docker/services/websocket/package*.json ./
 
 # Copier le code source
-COPY websocket/ ./
+COPY ./docker/services/websocket/ ./
 
 # Exposer le port WebSocket
 EXPOSE 3001

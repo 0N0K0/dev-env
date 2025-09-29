@@ -4,8 +4,8 @@ FROM httpd:2.4-alpine
 RUN apk add --no-cache \
     apache2-utils
 
-# Copier la configuration Apache
-COPY apache/vhost.conf /usr/local/apache2/conf/extra/vhost.conf
+# Copier la configuration Apache dynamique
+COPY ./docker/services/apache/vhost.conf /usr/local/apache2/conf/extra/vhost.conf
 
 # Activer les modules nécessaires
 RUN echo "LoadModule proxy_module modules/mod_proxy.so" >> /usr/local/apache2/conf/httpd.conf && \
