@@ -21,13 +21,17 @@ BACKEND=$(grep "^BACKEND=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 TYPE=$(grep "^TYPE=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 WEBSERVER=$(grep "^WEBSERVER=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 USE_WEBSOCKET=$(grep "^USE_WEBSOCKET=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
+WEBSOCKET_TYPE=$(grep "^WEBSOCKET_TYPE=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 
 echo "📋 Configuration détectée :"
 echo "   Backend: $BACKEND"
 echo "   Type: $TYPE"  
 echo "   Serveur web: $WEBSERVER"
 echo "   WebSocket: $USE_WEBSOCKET"
-echo "
+if [ "$USE_WEBSOCKET" = "true" ]; then
+    echo "   Type WebSocket: $WEBSOCKET_TYPE"
+fi
+echo ""
 
 # Vérification de Homebrew
 if ! command -v brew &> /dev/null; then
@@ -61,6 +65,9 @@ install_if_missing "curl" "brew install curl"
 install_if_missing "tree" "brew install tree"
 install_if_missing "jq" "brew install jq"
 install_if_missing "httpie" "brew install httpie"
+install_if_missing "node" "brew install node"
+install_if_missing "nvm" "brew install nvm"
+install_if_missing "docker" "brew install --cask docker"
 
 # Installation sélective selon le backend
 case "$BACKEND" in
@@ -71,15 +78,7 @@ case "$BACKEND" in
         
         echo "📦 Installation des outils PHP de développement..."
         install_if_missing "php-cs-fixer" "brew install php-cs-fixer"
-        
-        # Extensions PHP pour développement (gérées localement)
-        if command -v php &> /dev/null; then
-            echo "🔧 Configuration des extensions PHP locales..."
-            # Vérifier si Xdebug est disponible
-            php -m | grep -q xdebug || echo "   💡 Pour Xdebug: pecl install xdebug (si nécessaire)"
-            echo "   💡 Extensions disponibles localement: zip, curl, gd, redis, imagick, xdebug"
-        fi
-        
+                
         # Outils Composer globaux
         if command -v composer &> /dev/null; then
             echo "📦 Installation des packages Composer globaux..."
@@ -92,7 +91,6 @@ case "$BACKEND" in
         echo "🟢 Installation des outils Node.js..."
         install_if_missing "node" "brew install node"
         install_if_missing "nvm" "brew install nvm"
-        install_if_missing "yarn" "brew install yarn"
         
         # Outils npm globaux
         if command -v npm &> /dev/null; then
@@ -146,21 +144,33 @@ esac
 
 # Installation des outils WebSocket si activés
 if [ "$USE_WEBSOCKET" = "true" ]; then
-    echo "🔌 WebSocket activé - installation des outils associés..."
-    if [ "$BACKEND" = "node" ]; then
-        if command -v npm &> /dev/null; then
-            npm list -g socket.io &> /dev/null || npm install -g socket.io
-        fi
-    fi
-fi
-
-# Docker (si nécessaire)
-echo "🐳 Vérification de Docker..."
-if command -v docker &> /dev/null; then
-    echo "✅ Docker déjà installé"
+    echo "🔌 WebSocket activé ($WEBSOCKET_TYPE) - installation des outils associés..."
+    
+    case "$WEBSOCKET_TYPE" in
+        socketio)
+            if command -v npm &> /dev/null; then
+                echo "📦 Installation de Socket.IO..."
+                npm list -g socket.io &> /dev/null || npm install -g socket.io
+                echo "✅ Socket.IO installé"
+            else
+                echo "⚠️ npm non disponible, Socket.IO ne peut pas être installé"
+            fi
+            ;;
+        mercure)
+            if [ "$BACKEND" = "php" ]; then
+                echo "💡 Mercure (native Symfony) - aucun outil supplémentaire requis"
+                echo "   Mercure sera configuré automatiquement avec Symfony"
+            else
+                echo "⚠️ ATTENTION: Mercure est conçu pour PHP/Symfony uniquement"
+                echo "   Backend actuel: $BACKEND (incompatible avec Mercure)"
+            fi
+            ;;
+        *)
+            echo "⚠️ Type WebSocket '$WEBSOCKET_TYPE' non reconnu"
+            ;;
+    esac
 else
-    echo "📦 Installation de Docker Desktop..."
-    brew install --cask docker
+    echo "🔌 WebSocket désactivé - aucun outil WebSocket installé"
 fi
 
 echo ""
@@ -182,7 +192,6 @@ case "$BACKEND" in
             echo "📋 Outils Node.js installés :"
             echo "   🟢 Node.js: $(node --version)"
             echo "   📦 npm: $(npm --version)"
-            command -v yarn &> /dev/null && echo "   📦 Yarn: $(yarn --version)"
             command -v nvm &> /dev/null && echo "   🔄 nvm: installé"
         fi
         ;;
@@ -208,14 +217,20 @@ esac
 # Outils génériques
 echo ""
 echo "📋 Outils génériques :"
-echo "   � Docker: $(docker --version)"
-echo "   � git: $(git --version)"
-echo "   � httpie: $(http --version)"
+echo "   Docker: $(docker --version)"
+echo "   git: $(git --version)"
+echo "   httpie: $(http --version)"
+echo "   curl: $(curl --version | head -n1)"
+echo "   tree: $(tree --version | head -n1)"
+echo "   jq: $(jq --version)"
+echo "   node: $(node --version)"
+echo "   nvm: $(nvm --version)"
 
 echo ""
-echo "� Outils installés pour le backend '$BACKEND' !"
-echo "💡 Les conteneurs Docker continuent de fonctionner pour l'exécution."
+echo "Outils installés pour le backend '$BACKEND' !"
 echo "💡 Exemple d'utilisation :"
+echo "   npm install                       # Installer les dépendances"
+echo "   npm run dev                       # Lancer en mode développement"
 
 case "$BACKEND" in
     php)
@@ -224,8 +239,6 @@ case "$BACKEND" in
         echo "   php-cs-fixer fix                  # Formater le code"
         ;;
     node)
-        echo "   npm install                       # Installer les dépendances"
-        echo "   npm run dev                       # Lancer en mode développement"
         echo "   eslint src/                       # Vérifier la syntaxe"
         ;;
     python)
@@ -239,38 +252,6 @@ case "$BACKEND" in
         echo "   goimports -w .                    # Formater le code"
         ;;
 esac
-
-echo ""
-
-# Installation des outils CLI spécialisés
-echo "🔧 Installation des outils CLI spécialisés..."
-
-# Symfony CLI (pour projets Symfony et général PHP)
-if [ "$BACKEND" = "php" ] && ! command -v symfony &> /dev/null; then
-    echo "📦 Installation de Symfony CLI..."
-    brew install symfony-cli/tap/symfony-cli
-    echo "✅ Symfony CLI installé"
-else
-    echo "✅ Symfony CLI déjà installé ou non nécessaire"
-fi
-
-# WP-CLI (pour WordPress)
-if ! command -v wp &> /dev/null; then
-    echo "📦 Installation de WP-CLI..."
-    brew install wp-cli
-    echo "✅ WP-CLI installé"
-else
-    echo "✅ WP-CLI déjà installé"
-fi
-
-# Node.js/npm (pour builds modernes)
-if ! command -v node &> /dev/null; then
-    echo "📦 Installation de Node.js..."
-    brew install node
-    echo "✅ Node.js installé"
-else
-    echo "✅ Node.js déjà installé"
-fi
 
 echo ""
 echo "🎉 Tous les outils de développement sont installés !"

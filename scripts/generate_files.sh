@@ -4,19 +4,10 @@
 
 set -e  # Arrêter en cas d'erreur
 
-# Fonction d'aide
-show_usage() {
-    echo "Usage: $0 <backend> <type>"
-    echo "Exemple: $0 php api"
-    echo "Backends disponibles: php, node, python, go"
-    echo "Types: api (JSON), app (HTML)"
-    exit 1
-}
-
 # Vérification des arguments
 if [ $# -ne 2 ]; then
     echo "❌ Nombre d'arguments incorrect"
-    show_usage
+    exit 1
 fi
 
 BACKEND="$1"

@@ -67,7 +67,7 @@ if (WEBSOCKET_TYPE === 'socketio') {
 			console.log('📡 Client déconnecté:', socket.id);
 		});
 	});
-} else if (WEBSOCKET_TYPE === 'native') {
+} else if (WEBSOCKET_TYPE === 'mercure') {
 	// Configuration WebSocket natif
 	const WebSocket = require('ws');
 	const wss = new WebSocket.Server({ server });

@@ -127,7 +127,7 @@ EOF
 
 echo "   ✅ docker-compose.yml principal généré"
 
-# Générer le fichier mailpit si nécessaire
+# Gérer le fichier mailpit
 if [ "$USE_MAILPIT" = "true" ]; then
     cat > "docker/docker-compose.mailpit.yml" << EOF
 # Configuration Mailpit - Générée automatiquement
@@ -143,9 +143,15 @@ services:
             - $PROJECT_NAME
 EOF
     echo "   ✅ docker-compose.mailpit.yml généré"
+else
+    # Supprimer le fichier s'il existe et que Mailpit est désactivé
+    if [ -f "docker/docker-compose.mailpit.yml" ]; then
+        rm -f "docker/docker-compose.mailpit.yml"
+        echo "   🗑️  docker-compose.mailpit.yml supprimé (Mailpit désactivé)"
+    fi
 fi
 
-# Générer le fichier websocket si nécessaire  
+# Gérer le fichier websocket
 if [ "$USE_WEBSOCKET" = "true" ]; then
     cat > "docker/docker-compose.websocket.yml" << EOF
 # Configuration WebSocket ($WEBSOCKET_TYPE) - Générée automatiquement
@@ -166,6 +172,12 @@ services:
             - WEBSOCKET_TYPE=$WEBSOCKET_TYPE
 EOF
     echo "   ✅ docker-compose.websocket.yml généré"
+else
+    # Supprimer le fichier s'il existe et que WebSocket est désactivé
+    if [ -f "docker/docker-compose.websocket.yml" ]; then
+        rm -f "docker/docker-compose.websocket.yml"
+        echo "   🗑️  docker-compose.websocket.yml supprimé (WebSocket désactivé)"
+    fi
 fi
 
 echo "🎉 Génération du docker-compose.yml terminée !"

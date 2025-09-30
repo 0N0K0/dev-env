@@ -108,9 +108,9 @@ main_menu() {
     
     local project_type
     project_type=$(ask_choice "🎯 Type de projet" 1 \
+        "Configuration manuelle (mode avancé)" \
         "Symfony API (API Platform + GraphQL optionnel)" \
         "WordPress Bedrock (Thème moderne optionnel)" \
-        "Configuration manuelle (mode avancé)" \
         "Annuler")
     
     case "$project_type" in
@@ -261,8 +261,14 @@ selected_webserver=$(ask_choice "Serveur web" "1" "${webserver_options[@]}")
 # 7. Mailpit
 selected_mailpit=$(ask_yes_no "Activer Mailpit (serveur de mail de développement)" "true")
 
-# 8. WebSocket
-websocket_choice=$(ask_choice "🔌 WebSocket" 3 "Mercure (native Symfony)" "Socket.IO" "Non")
+# 8. WebSocket (selon le backend)
+if [ "$selected_backend" = "php" ]; then
+    # Mercure disponible seulement pour PHP/Symfony
+    websocket_choice=$(ask_choice "🔌 WebSocket" 3 "Mercure (native Symfony)" "Socket.IO" "Non")
+else
+    # Pour les autres backends, seulement Socket.IO ou None
+    websocket_choice=$(ask_choice "🔌 WebSocket" 2 "Socket.IO" "Non")
+fi
 
 # Configuration WebSocket selon le choix
 if [ "$websocket_choice" = "Non" ]; then
