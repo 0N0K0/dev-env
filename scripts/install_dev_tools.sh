@@ -8,15 +8,19 @@ echo "🍺 Installation des outils de développement via Homebrew"
 echo "=================================================="
 
 # Lecture de la configuration depuis .env
-if [ ! -f "../.env" ]; then
-    echo "❌ Fichier .env introuvable. Lancez d'abord 'make switch BACKEND=<backend>'"
-    exit 1
+ENV_FILE=".env"
+if [ ! -f "$ENV_FILE" ]; then
+    ENV_FILE="../.env"
+    if [ ! -f "$ENV_FILE" ]; then
+        echo "❌ Fichier .env introuvable. Lancez d'abord 'make switch BACKEND=<backend>'"
+        exit 1
+    fi
 fi
 
-BACKEND=$(grep "^BACKEND=" ../.env | cut -d'=' -f2 | tr -d '\n\r')
-TYPE=$(grep "^TYPE=" ../.env | cut -d'=' -f2 | tr -d '\n\r')
-WEBSERVER=$(grep "^WEBSERVER=" ../.env | cut -d'=' -f2 | tr -d '\n\r')
-USE_WEBSOCKET=$(grep "^USE_WEBSOCKET=" ../.env | cut -d'=' -f2 | tr -d '\n\r')
+BACKEND=$(grep "^BACKEND=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
+TYPE=$(grep "^TYPE=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
+WEBSERVER=$(grep "^WEBSERVER=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
+USE_WEBSOCKET=$(grep "^USE_WEBSOCKET=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 
 echo "📋 Configuration détectée :"
 echo "   Backend: $BACKEND"
@@ -235,3 +239,38 @@ case "$BACKEND" in
         echo "   goimports -w .                    # Formater le code"
         ;;
 esac
+
+echo ""
+
+# Installation des outils CLI spécialisés
+echo "🔧 Installation des outils CLI spécialisés..."
+
+# Symfony CLI (pour projets Symfony et général PHP)
+if [ "$BACKEND" = "php" ] && ! command -v symfony &> /dev/null; then
+    echo "📦 Installation de Symfony CLI..."
+    brew install symfony-cli/tap/symfony-cli
+    echo "✅ Symfony CLI installé"
+else
+    echo "✅ Symfony CLI déjà installé ou non nécessaire"
+fi
+
+# WP-CLI (pour WordPress)
+if ! command -v wp &> /dev/null; then
+    echo "📦 Installation de WP-CLI..."
+    brew install wp-cli
+    echo "✅ WP-CLI installé"
+else
+    echo "✅ WP-CLI déjà installé"
+fi
+
+# Node.js/npm (pour builds modernes)
+if ! command -v node &> /dev/null; then
+    echo "📦 Installation de Node.js..."
+    brew install node
+    echo "✅ Node.js installé"
+else
+    echo "✅ Node.js déjà installé"
+fi
+
+echo ""
+echo "🎉 Tous les outils de développement sont installés !"
