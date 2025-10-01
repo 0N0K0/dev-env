@@ -36,16 +36,25 @@ echo -e "  ${CYAN}URL du site :${NC} $WP_SITE_URL"
 echo -e "  ${CYAN}Utilisateur admin :${NC} $WP_ADMIN_USER"
 echo -e "  ${CYAN}Email admin :${NC} $WP_ADMIN_EMAIL"
 
-# Vérifier que les conteneurs sont démarrés
-echo -e "\n${YELLOW}🔍 Vérification des conteneurs...${NC}"
-if ! docker ps --format "table {{.Names}}" | grep -q "app-php"; then
-    echo -e "${RED}❌ Les conteneurs ne semblent pas démarrés${NC}"
-    echo -e "${YELLOW}💡 Lancez d'abord : make build && make start${NC}"
-    exit 1
-fi
-
 # Lire les informations de DB pour WP-CLI local
 DB_TYPE=$(grep "^DB_TYPE=" .env | cut -d'=' -f2)
+TYPE=$(grep "^TYPE=" .env | cut -d'=' -f2 2>/dev/null || echo "app")
+BACKEND=$(grep "^BACKEND=" .env | cut -d'=' -f2 2>/dev/null || echo "php")
+WEBSERVER=$(grep "^WEBSERVER=" .env | cut -d'=' -f2 2>/dev/null || echo "apache")
+
+# Construire les noms de services selon la convention
+BACKEND_SERVICE="${TYPE}-${BACKEND}"     # app-php
+DB_SERVICE="${DB_TYPE}"                  # postgres ou mysql
+WEB_SERVICE="${WEBSERVER}"               # apache ou nginx
+
+# Vérifier que les conteneurs sont démarrés
+echo -e "\n${YELLOW}🔍 Vérification des conteneurs...${NC}"
+if ! docker ps --format "table {{.Names}}" | grep -q "${PROJECT_NAME}-${BACKEND_SERVICE}"; then
+    echo -e "${RED}❌ Les conteneurs ne semblent pas démarrés${NC}"
+    echo -e "${YELLOW}💡 Lancez d'abord : make build && make start${NC}"
+    echo -e "${CYAN}Conteneur attendu : ${PROJECT_NAME}-${BACKEND_SERVICE}${NC}"
+    exit 1
+fi
 DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2)
 DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
@@ -75,13 +84,13 @@ wait_for_database() {
         
         if [ "$DB_TYPE" = "mysql" ]; then
             # Test de connexion MySQL/MariaDB
-            if docker exec "${PROJECT_NAME}-db" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+            if docker exec "${PROJECT_NAME}-${DB_TYPE}" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
                 db_ready=true
             fi
         elif [ "$DB_TYPE" = "postgres" ]; then
             # Test de connexion PostgreSQL
-            if docker exec "${PROJECT_NAME}-db" pg_isready -h localhost -p 5432 >/dev/null 2>&1 && \
-               docker exec "${PROJECT_NAME}-db" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" >/dev/null 2>&1; then
+            if docker exec "${PROJECT_NAME}-${DB_TYPE}" pg_isready -h localhost -p 5432 >/dev/null 2>&1 && \
+               docker exec "${PROJECT_NAME}-${DB_TYPE}" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" >/dev/null 2>&1; then
                 db_ready=true
             fi
         fi
@@ -97,7 +106,7 @@ wait_for_database() {
     done
     
     echo -e "${RED}❌ Impossible de se connecter à la base de données après ${max_attempts} tentatives${NC}"
-    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs db${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs ${DB_TYPE}${NC}"
     return 1
 }
 
@@ -110,7 +119,7 @@ wait_for_php_fpm() {
     
     while [ $attempt -le $max_attempts ]; do
         # Vérifier que le conteneur PHP répond
-        if docker exec "${PROJECT_NAME}-app-php" php -v >/dev/null 2>&1; then
+        if docker exec "${PROJECT_NAME}-${BACKEND_SERVICE}" php -v >/dev/null 2>&1; then
             # Vérifier que PHP peut se connecter à la base de données
             local php_test_cmd=""
             if [ "$DB_TYPE" = "mysql" ]; then
@@ -120,7 +129,7 @@ wait_for_php_fpm() {
             fi
             
             if [ -n "$php_test_cmd" ]; then
-                local db_test_result=$(docker exec "${PROJECT_NAME}-app-php" sh -c "$php_test_cmd" 2>/dev/null)
+                local db_test_result=$(docker exec "${PROJECT_NAME}-${BACKEND_SERVICE}" sh -c "$php_test_cmd" 2>/dev/null)
                 if [ "$db_test_result" = "OK" ]; then
                     echo -e "${GREEN}✅ PHP-FPM prêt et connecté à la base de données${NC}"
                     return 0
@@ -140,7 +149,7 @@ wait_for_php_fpm() {
     done
     
     echo -e "${RED}❌ PHP-FPM non accessible après ${max_attempts} tentatives${NC}"
-    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs app-php${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs ${BACKEND_SERVICE}${NC}"
     return 1
 }
 
@@ -164,7 +173,7 @@ wait_for_webserver() {
     done
     
     echo -e "${RED}❌ Serveur web non accessible après ${max_attempts} tentatives${NC}"
-    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs web${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs ${WEB_SERVICE}${NC}"
     return 1
 }
 
@@ -198,7 +207,7 @@ if ! command -v wp &> /dev/null; then
 fi
 
 # Test de WP-CLI dans le conteneur
-if ! docker exec "${PROJECT_NAME}-app-php" php -r "echo 'PHP OK';" >/dev/null 2>&1; then
+if ! docker exec "${PROJECT_NAME}-${BACKEND_SERVICE}" php -r "echo 'PHP OK';" >/dev/null 2>&1; then
     echo -e "${RED}❌ PHP non accessible dans le conteneur${NC}"
     exit 1
 fi
@@ -212,13 +221,13 @@ show_diagnostic_info() {
     docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     
     echo -e "\n${CYAN}Logs récents de la base de données :${NC}"
-    docker-compose logs --tail=10 db 2>/dev/null || echo "Aucun log de DB disponible"
+    docker-compose logs --tail=10 ${DB_TYPE} 2>/dev/null || echo "Aucun log de DB disponible"
     
     echo -e "\n${CYAN}Logs récents de PHP :${NC}"
-    docker-compose logs --tail=10 app-php 2>/dev/null || echo "Aucun log PHP disponible"
+    docker-compose logs --tail=10 ${BACKEND_SERVICE} 2>/dev/null || echo "Aucun log PHP disponible"
     
     echo -e "\n${CYAN}Logs récents du serveur web :${NC}"
-    docker-compose logs --tail=10 web 2>/dev/null || echo "Aucun log web disponible"
+    docker-compose logs --tail=10 ${WEB_SERVICE} 2>/dev/null || echo "Aucun log web disponible"
     
     echo -e "\n${YELLOW}💡 Solutions possibles :${NC}"
     echo -e "1. Attendre quelques minutes et relancer"
