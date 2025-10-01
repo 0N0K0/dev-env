@@ -254,6 +254,12 @@ create_common_project() {
         bash scripts/files_handlers/generate_configs.sh
     fi
 
+    if [ -f "scripts/files_handlers/install_dev_tools.sh" ]; then
+        bash scripts/files_handlers/install_dev_tools.sh
+    else
+        echo -e "${YELLOW}⚠️  Script scripts/files_handlers/install_dev_tools.sh non trouvé${NC}"
+    fi
+
     echo -e "\n${GREEN}Lancement de l'installation automatique complète...${NC}"
     echo -e "${CYAN}Cette installation va :${NC}"
     }
