@@ -471,11 +471,28 @@ cd "$1"  # Aller dans le répertoire du projet
 
 # Supprimer le dossier scripts/
 if [ -d "scripts/" ]; then
-    rm -rf "scripts/"
-    if [ $? -eq 0 ]; then
-        echo "✅ Dossier scripts/ complètement supprimé"
+    echo "🗑️  Tentative de suppression du dossier scripts/..."
+    
+    # Forcer la suppression avec plusieurs méthodes
+    rm -rf "scripts/" 2>/dev/null
+    
+    # Vérifier si la suppression a vraiment réussi
+    if [ -d "scripts/" ]; then
+        # Méthode alternative : suppression avec sudo si nécessaire
+        echo "⚠️  Suppression normale échouée, tentative avec permissions étendues..."
+        sudo rm -rf "scripts/" 2>/dev/null || true
+        
+        # Vérification finale
+        if [ -d "scripts/" ]; then
+            echo "❌ Impossible de supprimer le dossier scripts/ automatiquement"
+            echo "💡 Supprimez-le manuellement avec : sudo rm -rf scripts/"
+            echo "📁 Contenu restant dans scripts/:"
+            ls -la "scripts/" 2>/dev/null || echo "   (impossible de lister le contenu)"
+        else
+            echo "✅ Dossier scripts/ supprimé avec permissions étendues"
+        fi
     else
-        echo "⚠️  Erreur lors de la suppression. Supprimez manuellement: rm -rf scripts/"
+        echo "✅ Dossier scripts/ complètement supprimé"
     fi
 else
     echo "ℹ️  Dossier scripts/ déjà supprimé"
