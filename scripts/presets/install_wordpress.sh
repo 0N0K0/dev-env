@@ -51,6 +51,66 @@ DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
 DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
 
+# Attendre que les services soient prêts
+echo -e "\n${YELLOW}⏳ Attente que les services soient prêts...${NC}"
+
+# Fonction pour attendre la base de données
+wait_for_database() {
+    local max_attempts=30
+    local attempt=1
+    
+    echo -e "${CYAN}🔍 Vérification de la connexion à la base de données...${NC}"
+    
+    while [ $attempt -le $max_attempts ]; do
+        if nc -z localhost ${DB_PORT} 2>/dev/null; then
+            echo -e "${GREEN}✅ Base de données accessible${NC}"
+            return 0
+        fi
+        
+        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente de la base de données...${NC}"
+        sleep 2
+        ((attempt++))
+    done
+    
+    echo -e "${RED}❌ Impossible de se connecter à la base de données après ${max_attempts} tentatives${NC}"
+    return 1
+}
+
+# Fonction pour attendre PHP-FPM
+wait_for_php_fpm() {
+    local max_attempts=15
+    local attempt=1
+    
+    echo -e "${CYAN}🔍 Vérification du service PHP-FPM...${NC}"
+    
+    while [ $attempt -le $max_attempts ]; do
+        if docker exec "${PROJECT_NAME}-app-php" php -v >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ PHP-FPM prêt${NC}"
+            return 0
+        fi
+        
+        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente de PHP-FPM...${NC}"
+        sleep 1
+        ((attempt++))
+    done
+    
+    echo -e "${RED}❌ PHP-FPM non accessible après ${max_attempts} tentatives${NC}"
+    return 1
+}
+
+# Attendre les services
+if ! wait_for_database; then
+    echo -e "${RED}❌ Échec de l'attente de la base de données${NC}"
+    exit 1
+fi
+
+if ! wait_for_php_fpm; then
+    echo -e "${RED}❌ Échec de l'attente de PHP-FPM${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}🎉 Tous les services sont prêts !${NC}"
+
 # Configuration temporaire pour WP-CLI local
 echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
 cat > app/.env.local << EOF

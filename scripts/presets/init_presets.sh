@@ -234,7 +234,7 @@ write_wordpress_env() {
 
     echo "" >> .env
     echo "# Configuration d'administration WordPress" >> .env
-    echo " WP_ADMIN_USER=admin" >> .env
+    echo "WP_ADMIN_USER=admin" >> .env
     echo "WP_ADMIN_PASSWORD=root" >> .env
     echo "WP_ADMIN_EMAIL=admin@example.com" >> .env
     echo "WP_SITE_URL=http://localhost" >> .env
