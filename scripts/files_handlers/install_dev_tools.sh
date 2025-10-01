@@ -90,6 +90,7 @@ case "$BACKEND" in
             echo "📦 Installation des packages Composer..."
             composer global show phpunit/phpunit &> /dev/null || composer global require phpunit/phpunit
             composer global show phpstan/phpstan &> /dev/null || composer global require phpstan/phpstan
+            composer global show symfony/var-dumper &> /dev/null || composer global require symfony/var-dumper
         fi
         ;;
         

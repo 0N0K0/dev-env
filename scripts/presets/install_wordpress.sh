@@ -56,60 +56,176 @@ echo -e "\n${YELLOW}⏳ Attente que les services soient prêts...${NC}"
 
 # Fonction pour attendre la base de données
 wait_for_database() {
-    local max_attempts=30
+    local max_attempts=60
     local attempt=1
     
     echo -e "${CYAN}🔍 Vérification de la connexion à la base de données...${NC}"
     
     while [ $attempt -le $max_attempts ]; do
-        if nc -z localhost ${DB_PORT} 2>/dev/null; then
-            echo -e "${GREEN}✅ Base de données accessible${NC}"
+        # Vérifier d'abord que le port est ouvert
+        if ! nc -z localhost ${DB_PORT} 2>/dev/null; then
+            echo -e "${CYAN}   Tentative $attempt/$max_attempts - Port ${DB_PORT} non accessible...${NC}"
+            sleep 2
+            ((attempt++))
+            continue
+        fi
+        
+        # Vérifier que la base de données accepte les connexions
+        local db_ready=false
+        
+        if [ "$DB_TYPE" = "mysql" ]; then
+            # Test de connexion MySQL/MariaDB
+            if docker exec "${PROJECT_NAME}-db" mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+                db_ready=true
+            fi
+        elif [ "$DB_TYPE" = "postgres" ]; then
+            # Test de connexion PostgreSQL
+            if docker exec "${PROJECT_NAME}-db" pg_isready -h localhost -p 5432 >/dev/null 2>&1 && \
+               docker exec "${PROJECT_NAME}-db" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" >/dev/null 2>&1; then
+                db_ready=true
+            fi
+        fi
+        
+        if [ "$db_ready" = true ]; then
+            echo -e "${GREEN}✅ Base de données prête et accessible${NC}"
             return 0
         fi
         
-        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente de la base de données...${NC}"
+        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Base de données pas encore prête...${NC}"
         sleep 2
         ((attempt++))
     done
     
     echo -e "${RED}❌ Impossible de se connecter à la base de données après ${max_attempts} tentatives${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs db${NC}"
     return 1
 }
 
 # Fonction pour attendre PHP-FPM
 wait_for_php_fpm() {
-    local max_attempts=15
+    local max_attempts=30
     local attempt=1
     
     echo -e "${CYAN}🔍 Vérification du service PHP-FPM...${NC}"
     
     while [ $attempt -le $max_attempts ]; do
+        # Vérifier que le conteneur PHP répond
         if docker exec "${PROJECT_NAME}-app-php" php -v >/dev/null 2>&1; then
-            echo -e "${GREEN}✅ PHP-FPM prêt${NC}"
-            return 0
+            # Vérifier que PHP peut se connecter à la base de données
+            local php_test_cmd=""
+            if [ "$DB_TYPE" = "mysql" ]; then
+                php_test_cmd="php -r \"try { new PDO('mysql:host=${DB_TYPE};port=3306;dbname=${DB_NAME}', '${DB_USER}', '${DB_PASSWORD}'); echo 'OK'; } catch(Exception \$e) { echo 'ERROR'; }\""
+            elif [ "$DB_TYPE" = "postgres" ]; then
+                php_test_cmd="php -r \"try { new PDO('pgsql:host=${DB_TYPE};port=5432;dbname=${DB_NAME}', '${DB_USER}', '${DB_PASSWORD}'); echo 'OK'; } catch(Exception \$e) { echo 'ERROR'; }\""
+            fi
+            
+            if [ -n "$php_test_cmd" ]; then
+                local db_test_result=$(docker exec "${PROJECT_NAME}-app-php" sh -c "$php_test_cmd" 2>/dev/null)
+                if [ "$db_test_result" = "OK" ]; then
+                    echo -e "${GREEN}✅ PHP-FPM prêt et connecté à la base de données${NC}"
+                    return 0
+                else
+                    echo -e "${CYAN}   Tentative $attempt/$max_attempts - PHP prêt mais base de données non accessible...${NC}"
+                fi
+            else
+                echo -e "${GREEN}✅ PHP-FPM prêt${NC}"
+                return 0
+            fi
+        else
+            echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente de PHP-FPM...${NC}"
         fi
         
-        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente de PHP-FPM...${NC}"
-        sleep 1
+        sleep 2
         ((attempt++))
     done
     
     echo -e "${RED}❌ PHP-FPM non accessible après ${max_attempts} tentatives${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs app-php${NC}"
+    return 1
+}
+
+# Fonction pour attendre le serveur web
+wait_for_webserver() {
+    local max_attempts=20
+    local attempt=1
+    
+    echo -e "${CYAN}🔍 Vérification du serveur web...${NC}"
+    
+    while [ $attempt -le $max_attempts ]; do
+        # Test d'accès HTTP simple
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200\|404\|403"; then
+            echo -e "${GREEN}✅ Serveur web accessible${NC}"
+            return 0
+        fi
+        
+        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente du serveur web...${NC}"
+        sleep 2
+        ((attempt++))
+    done
+    
+    echo -e "${RED}❌ Serveur web non accessible après ${max_attempts} tentatives${NC}"
+    echo -e "${YELLOW}💡 Vérifiez les logs: docker-compose logs web${NC}"
     return 1
 }
 
 # Attendre les services
+echo -e "${YELLOW}🔄 Vérification séquentielle des services...${NC}"
+
 if ! wait_for_database; then
     echo -e "${RED}❌ Échec de l'attente de la base de données${NC}"
+    show_diagnostic_info
     exit 1
 fi
 
 if ! wait_for_php_fpm; then
     echo -e "${RED}❌ Échec de l'attente de PHP-FPM${NC}"
+    show_diagnostic_info
+    exit 1
+fi
+
+if ! wait_for_webserver; then
+    echo -e "${RED}❌ Échec de l'attente du serveur web${NC}"
+    show_diagnostic_info
+    exit 1
+fi
+
+# Vérification finale de WP-CLI
+echo -e "${CYAN}🔍 Vérification de WP-CLI...${NC}"
+if ! command -v wp &> /dev/null; then
+    echo -e "${RED}❌ WP-CLI non disponible${NC}"
+    echo -e "${YELLOW}💡 Installez WP-CLI: brew install wp-cli${NC}"
+    exit 1
+fi
+
+# Test de WP-CLI dans le conteneur
+if ! docker exec "${PROJECT_NAME}-app-php" php -r "echo 'PHP OK';" >/dev/null 2>&1; then
+    echo -e "${RED}❌ PHP non accessible dans le conteneur${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}🎉 Tous les services sont prêts !${NC}"
+
+# Fonction de diagnostic en cas d'échec
+show_diagnostic_info() {
+    echo -e "\n${YELLOW}🔍 Informations de diagnostic :${NC}"
+    echo -e "${CYAN}État des conteneurs :${NC}"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    
+    echo -e "\n${CYAN}Logs récents de la base de données :${NC}"
+    docker-compose logs --tail=10 db 2>/dev/null || echo "Aucun log de DB disponible"
+    
+    echo -e "\n${CYAN}Logs récents de PHP :${NC}"
+    docker-compose logs --tail=10 app-php 2>/dev/null || echo "Aucun log PHP disponible"
+    
+    echo -e "\n${CYAN}Logs récents du serveur web :${NC}"
+    docker-compose logs --tail=10 web 2>/dev/null || echo "Aucun log web disponible"
+    
+    echo -e "\n${YELLOW}💡 Solutions possibles :${NC}"
+    echo -e "1. Attendre quelques minutes et relancer"
+    echo -e "2. Vérifier les logs complets: docker-compose logs"
+    echo -e "3. Redémarrer les services: make stop && make start"
+    echo -e "4. Reconstruire si nécessaire: make clean && make build"
+}
 
 # Configuration temporaire pour WP-CLI local
 echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
