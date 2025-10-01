@@ -51,7 +51,7 @@ DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
 DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
 
-# Configuration temporaire pour WP-CLI local via .env.local
+# Configuration temporaire pour WP-CLI local
 echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
 cat > app/.env.local << EOF
 # Configuration temporaire pour WP-CLI local
