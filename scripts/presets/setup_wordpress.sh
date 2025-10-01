@@ -64,15 +64,15 @@ DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
 DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
 
-# Générer des clés sécurisées sans caractères problématiques
-AUTH_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-SECURE_AUTH_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-LOGGED_IN_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-NONCE_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-AUTH_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-SECURE_AUTH_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-LOGGED_IN_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
-NONCE_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+# Générer des clés sécurisées compatibles .env (alphanumériques uniquement)
+AUTH_KEY=$(openssl rand -hex 32)
+SECURE_AUTH_KEY=$(openssl rand -hex 32) 
+LOGGED_IN_KEY=$(openssl rand -hex 32)
+NONCE_KEY=$(openssl rand -hex 32)
+AUTH_SALT=$(openssl rand -hex 32)
+SECURE_AUTH_SALT=$(openssl rand -hex 32)
+LOGGED_IN_SALT=$(openssl rand -hex 32)
+NONCE_SALT=$(openssl rand -hex 32)
 
 # Configurer la base de données et l'environnement
 cat > app/.env << EOF
@@ -82,7 +82,7 @@ DB_PASSWORD=${DB_PASSWORD}
 DB_HOST=${DB_TYPE}
 
 WP_ENV=development
-WP_HOME=http://localhost:8080
+WP_HOME=http://localhost
 WP_SITEURL=\${WP_HOME}/wp
 
 # Configuration des clés de sécurité
