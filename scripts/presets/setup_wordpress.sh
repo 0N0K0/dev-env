@@ -392,7 +392,7 @@ EOF
     "@types/wordpress__blocks": "^12.5.0",
     "@types/wordpress__block-editor": "^11.5.0",
     "@types/wordpress__components": "^23.0.0",
-    "@types/wordpress__i18n": "^4.0.0",
+    "@types/wordpress__i18n": "^3.11.0",
     "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^4.4.0"
@@ -402,7 +402,7 @@ EOF
     "@wordpress/blocks": "^12.0.0", 
     "@wordpress/components": "^25.0.0",
     "@wordpress/element": "^5.0.0",
-    "@wordpress/i18n": "^4.0.0",
+    "@wordpress/i18n": "^6.4.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
@@ -665,7 +665,10 @@ EOF
 fi
 
 echo -e "${CYAN}🛠️  Installation de WordPress...${NC}"
-make build && make start && make install-wordpress
+echo -e "${BLUE}🏗️  Construction des conteneurs...${NC}"
+make build
+echo -e "${BLUE}📚 Installation de WordPress via WP-CLI...${NC}"
+bash scripts/presets/install_wordpress.sh
 
 # Informations finales
 echo -e "\n${GREEN}🦆 Installation WordPress Bedrock terminée avec succès !${NC}"
