@@ -89,7 +89,195 @@ cleanup_docker_services() {
 
 }
 
-# 2. Nettoyage du Makefile
+# 2. Génération du README personnalisé
+generate_project_readme() {
+    echo -e "\n${CYAN}📝 Génération du README personnalisé...${NC}"
+    
+    # Créer une sauvegarde de l'ancien README
+    if [ -f "README.md" ]; then
+        cp README.md README.md.backup
+        echo -e "   ${BLUE}ℹ️  Sauvegarde créée: README.md.backup${NC}"
+    fi
+    
+    # Générer le nouveau README
+    cat > README.md << EOF
+# 🚀 $PROJECT_NAME
+
+Environnement de développement Docker Compose configuré avec **$BACKEND** et **$WEBSERVER**.
+
+## 📋 Configuration du projet
+
+- **Type**: $TYPE
+- **Backend**: $BACKEND
+- **Serveur web**: $WEBSERVER
+- **Base de données**: $DB_TYPE
+EOF
+
+    # Ajouter les services optionnels
+    if [ "$USE_MAILPIT" = "true" ]; then
+        echo "- **SMTP local**: Mailpit activé" >> README.md
+    fi
+    
+    if [ "$USE_WEBSOCKET" = "true" ]; then
+        echo "- **WebSocket**: $WEBSOCKET_TYPE activé" >> README.md
+    fi
+    
+    cat >> README.md << 'EOF'
+
+## 🚀 Démarrage rapide
+
+### Prérequis
+
+- Docker Desktop
+- Homebrew
+
+### Installation
+
+1. Cloner le projet :
+\`\`\`bash
+git clone <votre-repo>
+cd $PROJECT_NAME
+\`\`\`
+
+2. Construire et démarrer l'environnement :
+\`\`\`bash
+make build
+\`\`\`
+
+3. Accéder à l'application :
+   - **Application principale** : http://localhost
+EOF
+
+    # Ajouter les accès aux services selon la configuration
+    if [ "$USE_MAILPIT" = "true" ]; then
+        echo "   - **Interface Mailpit** : http://localhost:8025" >> README.md
+    fi
+    
+    if [ "$USE_WEBSOCKET" = "true" ]; then
+        echo "   - **Interface WebSocket** : http://localhost:8001" >> README.md
+    fi
+    
+    # Ajouter les ports de base de données
+    if [ "$DB_TYPE" = "mysql" ]; then
+        echo "   - **MySQL** : localhost:3306" >> README.md
+    elif [ "$DB_TYPE" = "postgres" ]; then
+        echo "   - **PostgreSQL** : localhost:5432" >> README.md
+    fi
+    
+    cat >> README.md << 'EOF'
+
+## 📋 Commandes disponibles
+
+### Gestion Docker
+```bash
+make start       # Démarrer les services
+make stop        # Arrêter les services
+make build       # Construire et démarrer
+make clean       # Arrêter et supprimer les données
+make status      # État des conteneurs
+make logs        # Voir les logs
+```
+
+### Commandes utiles
+```bash
+make help        # Afficher l'aide complète
+
+make exec SERVICE=<service> CMD=<commande> # Exécuter une commande dans un conteneur
+
+EOF
+
+    # Ajouter les commandes DB spécifiques
+    if [ "$DB_TYPE" = "mysql" ]; then
+        cat >> README.md << 'EOF'
+make mysql-cli # Accès direct à MySQL
+make mysql-query SQL="SHOW DATABASES;" # Exécuter une requête MySQL
+```
+EOF
+    elif [ "$DB_TYPE" = "postgres" ]; then
+        cat >> README.md << 'EOF'
+make postgres-cli # Accès direct à PostgreSQL
+make postgres-query SQL="\l" # Exécuter une requête PostgreSQL
+```
+EOF
+    fi
+    
+    cat >> README.md << EOF
+
+## 📁 Structure du projet
+
+\`\`\`
+$PROJECT_NAME/
+├── 📄 Makefile                    # Commandes de gestion
+├── 📄 .env                        # Configuration
+├── 🗂️ docker/
+│   ├── 🗂️ services/
+│   │   ├── 🗂️ $BACKEND/           # Configuration $BACKEND
+│   │   └── 🗂️ $WEBSERVER/         # Configuration $WEBSERVER
+│   ├── 📄 docker-compose.yml      # Services Docker
+└── 🗂️ $TYPE/                      # Code source
+\`\`\`
+
+EOF
+
+    # Ajouter la section de configuration SMTP si Mailpit est activé
+    if [ "$USE_MAILPIT" = "true" ]; then
+        cat >> README.md << 'EOF'
+## 📧 Configuration SMTP (Mailpit)
+
+Pour tester les emails localement, configurez votre application avec :
+
+```env
+MAIL_HOST=smtp
+MAIL_PORT=1025
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=null
+```
+
+Interface web disponible sur : http://localhost:8025
+
+EOF
+    fi
+
+    # Ajouter la section WebSocket si activé
+    if [ "$USE_WEBSOCKET" = "true" ]; then
+        cat >> README.md << EOF
+## 🔌 WebSocket ($WEBSOCKET_TYPE)
+
+Le service WebSocket $WEBSOCKET_TYPE est configuré et disponible.
+
+- **Interface de test** : http://localhost:8001
+- **Endpoint WebSocket** : ws://localhost:8001
+
+EOF
+    fi
+
+    cat >> README.md << 'EOF'
+## 🛠️ Développement
+
+### Variables d'environnement
+
+Les variables principales sont définies dans le fichier `.env`.
+
+### Logs et debugging
+
+```bash
+# Voir tous les logs
+make logs
+
+# Logs d'un service spécifique
+docker compose logs backend
+docker compose logs webserver
+docker compose logs database
+```
+
+*Généré automatiquement par le script de nettoyage - $(date)*
+EOF
+
+    echo -e "   ${GREEN}✅ README personnalisé généré${NC}"
+}
+
+# 3. Nettoyage du Makefile
 cleanup_makefile() {
     echo -e "\n${CYAN}🗑️  Nettoyage du Makefile...${NC}"
     
@@ -226,7 +414,11 @@ show_final_summary() {
     echo -e "\n${GREEN}🦆 NETTOYAGE TERMINÉ !${NC}"
     print_title "RÉSUMÉ"
     
-    echo -e "${CYAN}📋 Configuration finale :${NC}"
+    echo -e "${CYAN}� Fichiers générés :${NC}"
+    echo -e "   ${GREEN}✅ README.md personnalisé${NC}"
+    echo -e "   ${GREEN}✅ Makefile simplifié${NC}"
+    
+    echo -e "\n${CYAN}�📋 Configuration finale :${NC}"
     echo -e "   ${YELLOW}Projet:${NC} ${GREEN}$PROJECT_NAME${NC}"
     echo -e "   ${YELLOW}Backend:${NC} ${GREEN}$BACKEND${NC} (docker/services/$BACKEND/)"
     echo -e "   ${YELLOW}Serveur web:${NC} ${GREEN}$WEBSERVER${NC} (docker/services/$WEBSERVER/)"
@@ -289,6 +481,7 @@ main_cleanup_process() {
     echo -e "\n${GREEN}🚀 Début du nettoyage...${NC}"
     
     cleanup_docker_services
+    generate_project_readme
     cleanup_makefile
     
     show_final_summary
