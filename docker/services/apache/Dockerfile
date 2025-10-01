@@ -11,6 +11,10 @@ COPY ./docker/services/apache/vhost.conf /usr/local/apache2/conf/extra/vhost.con
 RUN echo "LoadModule proxy_module modules/mod_proxy.so" >> /usr/local/apache2/conf/httpd.conf && \
     echo "LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so" >> /usr/local/apache2/conf/httpd.conf && \
     echo "LoadModule rewrite_module modules/mod_rewrite.so" >> /usr/local/apache2/conf/httpd.conf && \
+    echo "LoadModule expires_module modules/mod_expires.so" >> /usr/local/apache2/conf/httpd.conf && \
+    echo "LoadModule headers_module modules/mod_headers.so" >> /usr/local/apache2/conf/httpd.conf && \
+    echo "LoadModule dir_module modules/mod_dir.so" >> /usr/local/apache2/conf/httpd.conf && \
+    echo "LoadModule mime_module modules/mod_mime.so" >> /usr/local/apache2/conf/httpd.conf && \
     echo "Include conf/extra/vhost.conf" >> /usr/local/apache2/conf/httpd.conf
 
 EXPOSE 80

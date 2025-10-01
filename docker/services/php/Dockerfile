@@ -104,5 +104,4 @@ WORKDIR /var/www/html
 COPY ./${SOURCE_DIR} /var/www/html
 
 # Ajuster les permissions après la copie
-RUN chown -R www-data:www-data /var/www/html && \
-    chmod -R 755 /var/www/html
+RUN chown -R www-data:www-data /var/www/html
