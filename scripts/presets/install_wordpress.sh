@@ -46,7 +46,7 @@ fi
 
 # Vérifier si WordPress est déjà installé
 echo -e "\n${YELLOW}🔍 Vérification de l'installation WordPress...${NC}"
-if make exec SERVICE=app-php CMD="wp core is-installed --allow-root" > /dev/null 2>&1; then
+if wp core is-installed --path=./app/web/wp > /dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  WordPress semble déjà installé${NC}"
     read -p "Voulez-vous réinstaller WordPress ? (y/N) " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -57,19 +57,19 @@ fi
 
 # Installer WordPress
 echo -e "\n${YELLOW}📚 Installation de WordPress...${NC}"
-make exec SERVICE=app-php CMD="wp core install \
-    --url='$WP_SITE_URL' \
-    --title='$PROJECT_NAME' \
-    --admin_user='$WP_ADMIN_USER' \
-    --admin_password='$WP_ADMIN_PASSWORD' \
-    --admin_email='$WP_ADMIN_EMAIL' \
-    --allow-root"
+wp core install \
+    --path=./app/web/wp \
+    --url="$WP_SITE_URL" \
+    --title="$PROJECT_NAME" \
+    --admin_user="$WP_ADMIN_USER" \
+    --admin_password="$WP_ADMIN_PASSWORD" \
+    --admin_email="$WP_ADMIN_EMAIL"
 
 # Activer le thème personnalisé si il existe
 THEME_NAME="${PROJECT_NAME}-theme"
-if make exec SERVICE=app-php CMD="wp theme list --format=csv --allow-root" | grep -q "$THEME_NAME"; then
+if wp theme list --format=csv --path=./app/web/wp | grep -q "$THEME_NAME"; then
     echo -e "\n${YELLOW}🎨 Activation du thème personnalisé...${NC}"
-    make exec SERVICE=app-php CMD="wp theme activate '$THEME_NAME' --allow-root"
+    wp theme activate "$THEME_NAME" --path=./app/web/wp
     echo -e "${GREEN}✅ Thème '$THEME_NAME' activé${NC}"
 fi
 

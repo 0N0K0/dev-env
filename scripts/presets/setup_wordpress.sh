@@ -54,8 +54,8 @@ echo -e "${GREEN}✅ Projet Bedrock créé${NC}"
 # Créer le fichier .env pour WordPress
 echo -e "${CYAN}Configuration de l'environnement WordPress...${NC}"
 
-# Générer des clés de sécurité WordPress
-SALTS=$(curl -s https://api.wordpress.org/secret-key/1.1/salt/)
+# Générer des clés de sécurité WordPress (version .env compatible)
+echo -e "${CYAN}🔐 Génération des clés de sécurité WordPress...${NC}"
 
 # Récupérer les données de configuration depuis .env
 DB_TYPE=$(grep "^DB_TYPE=" .env | cut -d'=' -f2)
@@ -63,6 +63,16 @@ DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2)
 DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
 DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
+
+# Générer des clés sécurisées sans caractères problématiques
+AUTH_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+SECURE_AUTH_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+LOGGED_IN_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+NONCE_KEY=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+AUTH_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+SECURE_AUTH_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+LOGGED_IN_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+NONCE_SALT=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
 
 # Configurer la base de données et l'environnement
 cat > app/.env << EOF
@@ -76,7 +86,14 @@ WP_HOME=http://localhost:8080
 WP_SITEURL=\${WP_HOME}/wp
 
 # Configuration des clés de sécurité
-$SALTS
+AUTH_KEY=${AUTH_KEY}
+SECURE_AUTH_KEY=${SECURE_AUTH_KEY}
+LOGGED_IN_KEY=${LOGGED_IN_KEY}
+NONCE_KEY=${NONCE_KEY}
+AUTH_SALT=${AUTH_SALT}
+SECURE_AUTH_SALT=${SECURE_AUTH_SALT}
+LOGGED_IN_SALT=${LOGGED_IN_SALT}
+NONCE_SALT=${NONCE_SALT}
 EOF
 
 echo -e "${GREEN}✅ Configuration WordPress créée${NC}"
