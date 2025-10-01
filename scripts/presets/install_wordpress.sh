@@ -161,13 +161,22 @@ wait_for_webserver() {
     echo -e "${CYAN}🔍 Vérification du serveur web...${NC}"
     
     while [ $attempt -le $max_attempts ]; do
-        # Test d'accès HTTP simple
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200\|404\|403"; then
-            echo -e "${GREEN}✅ Serveur web accessible${NC}"
+        # Test d'accès HTTP avec gestion des redirections
+        local http_code=$(curl -s -L -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 http://localhost 2>/dev/null || echo "000")
+        
+        # Accepter tous les codes HTTP valides (2xx, 3xx, 4xx mais pas 5xx)
+        if [[ "$http_code" =~ ^[234][0-9][0-9]$ ]]; then
+            echo -e "${GREEN}✅ Serveur web accessible (HTTP $http_code)${NC}"
             return 0
         fi
         
-        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Attente du serveur web...${NC}"
+        # Test alternatif avec nc pour vérifier si le port 80 répond
+        if nc -z localhost 80 2>/dev/null; then
+            echo -e "${GREEN}✅ Serveur web accessible (port 80 ouvert)${NC}"
+            return 0
+        fi
+        
+        echo -e "${CYAN}   Tentative $attempt/$max_attempts - Serveur web non accessible (HTTP: $http_code)...${NC}"
         sleep 2
         ((attempt++))
     done
