@@ -54,12 +54,6 @@ DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
 # Configuration temporaire pour WP-CLI local
 echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
 
-# Créer un fichier .env.local temporaire pour remplacer DB_HOST
-cat > app/.env.local << EOF
-# Configuration temporaire pour installation WP-CLI depuis l'hôte
-DB_HOST=127.0.0.1:${DB_PORT}
-EOF
-
 # Vérifier si WordPress est déjà installé  
 echo -e "\n${YELLOW}🔍 Vérification de l'installation WordPress...${NC}"
 if wp core is-installed --path=./app/web/wp > /dev/null 2>&1; then
@@ -90,11 +84,6 @@ if wp theme list --format=csv --path=./app/web/wp | grep -q "$THEME_NAME"; then
     wp theme activate "$THEME_NAME" --path=./app/web/wp
     echo -e "${GREEN}✅ Thème '$THEME_NAME' activé${NC}"
 fi
-
-# Nettoyer le fichier de configuration temporaire  
-echo -e "\n${CYAN}🧹 Nettoyage des fichiers temporaires...${NC}"
-rm -f app/.env.local
-echo -e "${GREEN}✅ Configuration temporaire supprimée${NC}"
 
 # Informations finales
 echo -e "\n${GREEN}🦆 Installation WordPress terminée avec succès !${NC}"
