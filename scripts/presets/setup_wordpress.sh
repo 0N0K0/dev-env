@@ -403,8 +403,12 @@ EOF
     "@wordpress/components": "^25.0.0",
     "@wordpress/element": "^5.0.0",
     "@wordpress/i18n": "^4.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "overrides": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }
 EOF
@@ -651,7 +655,7 @@ EOF
 
         # Installer les dépendances Node.js localement
         echo -e "${CYAN}📦 Installation des dépendances Node.js...${NC}"
-        cd "$THEME_PATH" && npm install && cd ../../../../../..
+        (cd "$THEME_PATH" && npm install)
         
         echo -e "${GREEN}✅ Blocks personnalisés configuré${NC}"
         echo -e "${CYAN}💡 Pour développer: cd $THEME_PATH && npm run dev${NC}"
