@@ -463,13 +463,68 @@ cleanup_self() {
     self_cleanup=$(ask_yes_no "Supprimer complètement le dossier scripts/" "true")
     
     if [ "$self_cleanup" = "true" ]; then
-        cd ..
-        if rm -rf "scripts/" 2>/dev/null; then
-            echo -e "   ${GREEN}✅ Dossier scripts/ complètement supprimé${NC}"
-        else
-            echo -e "   ${YELLOW}⚠️  Impossible de supprimer le dossier automatiquement${NC}"
-            echo -e "   ${CYAN}💡 Vous pouvez le supprimer manuellement: rm -rf scripts/${NC}"
-        fi
+        # Créer un script temporaire pour la suppression après la fin de ce script
+        cat > /tmp/cleanup_scripts.sh << 'EOL'
+#!/bin/bash
+sleep 1  # Attendre que le script parent se termine
+cd "$1"  # Aller dans le répertoire du projet
+
+# Supprimer le dossier scripts/
+if [ -d "scripts/" ]; then
+    rm -rf "scripts/"
+    if [ $? -eq 0 ]; then
+        echo "✅ Dossier scripts/ complètement supprimé"
+    else
+        echo "⚠️  Erreur lors de la suppression. Supprimez manuellement: rm -rf scripts/"
+    fi
+else
+    echo "ℹ️  Dossier scripts/ déjà supprimé"
+fi
+
+# Nettoyer tous les fichiers temporaires créés pendant le processus
+echo "🧹 Nettoyage des fichiers temporaires..."
+
+# Supprimer les sauvegardes créées pendant le nettoyage
+if [ -f "README.md.backup" ]; then
+    rm -f "README.md.backup"
+    echo "   ✅ README.md.backup supprimé"
+fi
+
+if [ -f "makefile.backup" ]; then
+    rm -f "makefile.backup"
+    echo "   ✅ makefile.backup supprimé"
+fi
+
+# Supprimer d'autres fichiers temporaires potentiels
+if [ -f ".env.local" ]; then
+    rm -f ".env.local"
+    echo "   ✅ .env.local supprimé"
+fi
+
+if [ -f "app/.env.local" ]; then
+    rm -f "app/.env.local"
+    echo "   ✅ app/.env.local supprimé"
+fi
+
+# Nettoyer les fichiers de logs temporaires
+if [ -f "docker-compose.override.yml" ]; then
+    rm -f "docker-compose.override.yml"
+    echo "   ✅ docker-compose.override.yml supprimé"
+fi
+
+echo "✅ Nettoyage complet terminé !"
+
+# Auto-suppression du script temporaire
+rm -f /tmp/cleanup_scripts.sh
+EOL
+        
+        chmod +x /tmp/cleanup_scripts.sh
+        
+        # Lancer la suppression en arrière-plan après la fin de ce script
+        /tmp/cleanup_scripts.sh "$(pwd)" &
+        
+        echo -e "   ${GREEN}✅ Suppression programmée du dossier scripts/${NC}"
+        echo -e "   ${BLUE}ℹ️  La suppression se fera après la fin de ce script${NC}"
     else
         echo -e "   ${BLUE}ℹ️  Dossier scripts/ conservé${NC}"
     fi
