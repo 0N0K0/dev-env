@@ -1,4 +1,10 @@
-/api/__pycache__
-*/node_modules
-*/package-lock.json
-/nginx/nginx.conf.tmp
+.env
+/api
+/app
+/docker/docker-compose.yml
+/docker/docker-compose.mailpit.yml
+/docker/docker-compose.websocket.yml
+/docker/services/apache/vhost.conf
+/docker/services/nginx/nginx.conf
+/docker/services/socketio/package-lock.json
+/docker/services/socketio/node_modules
