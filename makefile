@@ -95,7 +95,7 @@ init-project:
 # Nettoyer le template
 clean-project:
 	@echo "🧹 Nettoyage du template pour la configuration actuelle..."
-	@bash clean_project.sh $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET) $(TYPE)
+	@bash scripts/clean_project.sh $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET) $(TYPE)
 
 
 # Installation de WordPress via WP-CLI (après build/start)
