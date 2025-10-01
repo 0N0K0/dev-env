@@ -4,8 +4,11 @@
 
 set -e
 
-# Couleurs
-RED='\033[0;31m'
+# Couleursecho -e "${GREEN}✨ Votre environnement Symfony est prêt !${NC}"
+echo -e "\n${PURPLE}🌐 Accès et utilisation :${NC}"
+echo -e "4. ${CYAN}Accéder à votre API :${NC} http://localhost"
+echo -e "5. ${CYAN}Shell interactif :${NC} make exec SERVICE=api-php CMD=\"bash\""
+echo -e "6. ${CYAN}CORS configuré pour React/Frontend${NC} ✅"D='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -81,6 +84,10 @@ if [ "$USE_MERCURE" = "mercure" ]; then
     composer require symfony/mercure-bundle
 fi
 
+# CORS pour React/Frontend
+echo -e "${CYAN}- Installation du bundle CORS...${NC}"
+composer require nelmio/cors-bundle
+
 # Outils de développement
 echo -e "\n${YELLOW}🔧 Installation des outils de développement...${NC}"
 composer require --dev symfony/maker-bundle
@@ -101,6 +108,26 @@ DB_VERSION=$(grep "^DB_VERSION=" ../.env | cut -d'=' -f2)
 cat > .env.local << EOF
 # Configuration automatique pour Docker
 DATABASE_URL="${DB_TYPE}://${DB_USER}:${DB_PASSWORD}@${DB_TYPE}:${DB_PORT}/${DB_NAME}?serverVersion=${DB_VERSION}&charset=utf8"
+EOF
+
+# Configuration CORS pour React/Frontend
+echo -e "${CYAN}- Configuration CORS...${NC}"
+mkdir -p config/packages
+cat > config/packages/nelmio_cors.yaml << EOF
+nelmio_cors:
+    defaults:
+        origin_regex: true
+        allow_origin: ['^http://localhost:[0-9]+$', '^https://localhost:[0-9]+$']
+        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+        allow_headers: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+        expose_headers: ['Link']
+        max_age: 3600
+    paths:
+        '^/api/':
+            allow_origin: ['*']
+            allow_headers: ['*']
+            allow_methods: ['POST', 'PUT', 'PATCH', 'GET', 'DELETE', 'OPTIONS']
+            max_age: 3600
 EOF
 
 # Ajouter la configuration Mercure si activé
@@ -141,9 +168,9 @@ echo -e "4. ${CYAN}Accéder à votre API :${NC} http://localhost"
 echo -e "5. ${CYAN}Shell interactif :${NC} make exec SERVICE=api-php CMD=\"bash\""
 
 if [ "$USE_API_PLATFORM" = "true" ]; then
-    echo -e "6. ${CYAN}Interface API Platform :${NC} http://localhost/api"
+    echo -e "7. ${CYAN}Interface API Platform :${NC} http://localhost/api"
 fi
 
 if [ "$USE_MERCURE" = "mercure" ]; then
-    echo -e "7. ${CYAN}Hub Mercure :${NC} http://localhost:3001/.well-known/mercure"
+    echo -e "8. ${CYAN}Hub Mercure :${NC} http://localhost:3001/.well-known/mercure"
 fi
