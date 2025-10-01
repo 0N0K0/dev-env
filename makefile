@@ -100,9 +100,9 @@ clean-project:
 
 # Installation de WordPress via WP-CLI (après build/start)
 install-wordpress: build start
-    @echo "📚 Installation de WordPress via WP-CLI..."
+	@echo "📚 Installation de WordPress via WP-CLI..."
 	@if [ -f "scripts/presets/install_wordpress.sh" ]; then \
-    	bash scripts/presets/install_wordpress.sh
+		bash scripts/presets/install_wordpress.sh; \
 	else \
 		echo "❌ Script scripts/presets/install_wordpress.sh non trouvé"; \
 	fi
