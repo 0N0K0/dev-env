@@ -102,6 +102,3 @@ CMD ["php-fpm"]
 
 WORKDIR /var/www/html
 COPY ./${SOURCE_DIR} /var/www/html
-
-# Ajuster les permissions après la copie
-RUN chown -R www-data:www-data /var/www/html

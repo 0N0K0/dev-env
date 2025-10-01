@@ -44,21 +44,63 @@ if ! docker ps --format "table {{.Names}}" | grep -q "app-php"; then
     exit 1
 fi
 
+# Lire les informations de DB pour WP-CLI local
+DB_TYPE=$(grep "^DB_TYPE=" .env | cut -d'=' -f2)
+DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2)
+DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
+DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
+DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
+
+# Créer un wp-config.php temporaire pour WP-CLI local (avec localhost au lieu de mysql)
+echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
+cat > app/web/wp-config-local.php << EOF
+<?php
+// Configuration temporaire pour WP-CLI local
+define('DB_NAME', '${DB_NAME}');
+define('DB_USER', '${DB_USER}');  
+define('DB_PASSWORD', '${DB_PASSWORD}');
+define('DB_HOST', 'localhost:${DB_PORT}');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+
+// Clés de sécurité (temporaires pour installation)
+define('AUTH_KEY', 'temp-key');
+define('SECURE_AUTH_KEY', 'temp-key');
+define('LOGGED_IN_KEY', 'temp-key');  
+define('NONCE_KEY', 'temp-key');
+define('AUTH_SALT', 'temp-key');
+define('SECURE_AUTH_SALT', 'temp-key');
+define('LOGGED_IN_SALT', 'temp-key');
+define('NONCE_SALT', 'temp-key');
+
+\$table_prefix = 'wp_';
+define('WP_DEBUG', true);
+
+if (!defined('ABSPATH')) {
+    define('ABSPATH', __DIR__ . '/');
+}
+
+require_once ABSPATH . 'wp-settings.php';
+EOF
+
 # Vérifier si WordPress est déjà installé
 echo -e "\n${YELLOW}🔍 Vérification de l'installation WordPress...${NC}"
-if wp core is-installed --path=./app/web/wp > /dev/null 2>&1; then
+if wp core is-installed --path=./app/web/wp --config=app/web/wp-config-local.php > /dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  WordPress semble déjà installé${NC}"
     read -p "Voulez-vous réinstaller WordPress ? (y/N) " -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${CYAN}💡 Installation annulée${NC}"
+        # Nettoyer le fichier temporaire
+        rm -f app/web/wp-config-local.php
         exit 0
     fi
 fi
 
-# Installer WordPress
+# Installer WordPress avec la configuration temporaire
 echo -e "\n${YELLOW}📚 Installation de WordPress...${NC}"
 wp core install \
     --path=./app/web/wp \
+    --config=app/web/wp-config-local.php \
     --url="$WP_SITE_URL" \
     --title="$PROJECT_NAME" \
     --admin_user="$WP_ADMIN_USER" \
@@ -67,11 +109,16 @@ wp core install \
 
 # Activer le thème personnalisé si il existe
 THEME_NAME="${PROJECT_NAME}-theme"
-if wp theme list --format=csv --path=./app/web/wp | grep -q "$THEME_NAME"; then
+if wp theme list --format=csv --path=./app/web/wp --config=app/web/wp-config-local.php | grep -q "$THEME_NAME"; then
     echo -e "\n${YELLOW}🎨 Activation du thème personnalisé...${NC}"
-    wp theme activate "$THEME_NAME" --path=./app/web/wp
+    wp theme activate "$THEME_NAME" --path=./app/web/wp --config=app/web/wp-config-local.php
     echo -e "${GREEN}✅ Thème '$THEME_NAME' activé${NC}"
 fi
+
+# Nettoyer le fichier de configuration temporaire
+echo -e "\n${CYAN}🧹 Nettoyage des fichiers temporaires...${NC}"
+rm -f app/web/wp-config-local.php
+echo -e "${GREEN}✅ Configuration temporaire supprimée${NC}"
 
 # Informations finales
 echo -e "\n${GREEN}🦆 Installation WordPress terminée avec succès !${NC}"
