@@ -87,6 +87,7 @@ cleanup_docker_services() {
         echo -e "   ${GREEN}✅ Supprimé: docker/services/socketio/${NC}"
     fi
 
+    rm ".gitignore"
 }
 
 # 2. Génération du README personnalisé
