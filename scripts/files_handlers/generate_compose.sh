@@ -83,6 +83,8 @@ services:
             args:
                 PHP_VERSION: \${BACKEND_VERSION}
                 SOURCE_DIR: \${TYPE}
+                DB_TYPE: \${DB_TYPE}
+                USE_MONGODB: \${USE_MONGODB:-false}
         volumes:
             - ../\${TYPE}:/var/www/html
         networks:

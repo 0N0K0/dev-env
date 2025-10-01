@@ -392,7 +392,6 @@ EOF
     "@types/wordpress__blocks": "^12.5.0",
     "@types/wordpress__block-editor": "^11.5.0",
     "@types/wordpress__components": "^23.0.0",
-    "@types/wordpress__i18n": "^3.11.0",
     "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^4.4.0"
