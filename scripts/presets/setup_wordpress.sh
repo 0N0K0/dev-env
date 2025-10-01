@@ -21,11 +21,11 @@ fi
 
 PROJECT_NAME=$(grep "^PROJECT_NAME=" .env | cut -d'=' -f2)
 CREATE_CUSTOM_THEME=$(grep "^CREATE_CUSTOM_THEME=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
-USE_MODERN_BUILD=$(grep "^USE_MODERN_BUILD=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
+USE_CUSTOM_BLOCKS=$(grep "^USE_CUSTOM_BLOCKS=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
 
 echo -e "${BLUE}🚀 Installation automatique WordPress Bedrock: $PROJECT_NAME${NC}"
 
-# Installer WP-CLI uniquement si nécessaire
+# Installer WP-CLI
 echo -e "\n${YELLOW}🔧 Vérification de WP-CLI...${NC}"
 if ! command -v wp &> /dev/null; then
     echo -e "${CYAN}Installation de WP-CLI...${NC}"
@@ -33,13 +33,6 @@ if ! command -v wp &> /dev/null; then
     echo -e "${GREEN}✅ WP-CLI installé${NC}"
 else
     echo -e "${GREEN}✅ WP-CLI déjà disponible${NC}"
-fi
-
-# Installer Node.js/npm si pas présents (pour le build moderne)
-if [ "$USE_MODERN_BUILD" = "true" ] && ! command -v node &> /dev/null; then
-    echo -e "${CYAN}Installation de Node.js...${NC}"
-    brew install node
-    echo -e "${GREEN}✅ Node.js installé${NC}"
 fi
 
 # Nettoyer les anciens dossiers api/ et app/
@@ -55,7 +48,7 @@ fi
 
 # Créer le projet Bedrock avec Composer global
 echo -e "\n${YELLOW}🎨 Installation de WordPress Bedrock avec Composer...${NC}"
-composer create-project roots/bedrock ./app --no-interaction
+composer create-project roots/bedrock ./app
 echo -e "${GREEN}✅ Projet Bedrock créé${NC}"
 
 # Créer le fichier .env pour WordPress
@@ -88,7 +81,7 @@ EOF
 
 echo -e "${GREEN}✅ Configuration WordPress créée${NC}"
 
-# Thème personnalisé si demandé
+# Thème personnalisé
 if [ "$CREATE_CUSTOM_THEME" = "true" ]; then
     echo -e "\n${YELLOW}🎨 Création du thème personnalisé...${NC}"
     
@@ -99,10 +92,10 @@ if [ "$CREATE_CUSTOM_THEME" = "true" ]; then
     echo -e "${CYAN}📁 Création de la structure du thème...${NC}"
     mkdir -p "$THEME_PATH"
     
-    # Créer un thème de blocks moderne
+    # Créer un thème de blocks
     echo -e "${CYAN}🧱 Création du thème de blocks...${NC}"
     
-    # Structure des dossiers pour thème blocks
+    # Structure des dossiers
     mkdir -p "$THEME_PATH/templates"
     mkdir -p "$THEME_PATH/parts"
     mkdir -p "$THEME_PATH/patterns"
@@ -110,7 +103,7 @@ if [ "$CREATE_CUSTOM_THEME" = "true" ]; then
     mkdir -p "$THEME_PATH/assets/css"
     mkdir -p "$THEME_PATH/assets/js"
     
-    # style.css - Thème block compatible
+    # style.css
     cat > $THEME_PATH/style.css << EOF
 /*
 Theme Name: $PROJECT_NAME Block Theme
@@ -122,7 +115,7 @@ Requires PHP: 8.0
 */
 EOF
 
-    # theme.json - Configuration du thème blocks
+    # theme.json
     cat > $THEME_PATH/theme.json << EOF
 {
   "\$schema": "https://schemas.wp.org/trunk/theme.json",
@@ -217,7 +210,7 @@ EOF
 }
 EOF
 
-    # functions.php - Support des blocks et features modernes
+    # functions.php
     cat > $THEME_PATH/functions.php << EOF
 <?php
 /**
@@ -276,7 +269,7 @@ add_action('wp_enqueue_scripts', '${PROJECT_NAME//-/_}_enqueue_assets');
 add_action('enqueue_block_editor_assets', '${PROJECT_NAME//-/_}_enqueue_assets');
 EOF
 
-    # Templates HTML pour FSE
+    # Templates HTML
     cat > $THEME_PATH/templates/index.html << EOF
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
@@ -381,9 +374,9 @@ EOF
 
     echo -e "${GREEN}✅ Thème personnalisé créé (activation automatique au démarrage)${NC}"
     
-    # Build moderne si demandé
-    if [ "$USE_MODERN_BUILD" = "true" ]; then
-        echo -e "\n${YELLOW}⚡ Configuration du build moderne (React + Vite + TypeScript)...${NC}"
+    # Blocks personnalisés avec React, Vite et TypeScript
+    if [ "$USE_CUSTOM_BLOCKS" = "true" ]; then
+        echo -e "\n${YELLOW}⚡ Configuration des blocks personnalisés (React + Vite + TypeScript)...${NC}"
         
         # Package.json pour blocks WordPress avec TypeScript
         cat > $THEME_PATH/package.json << EOF
@@ -473,7 +466,7 @@ EOF
 }
 EOF
 
-        # Structure pour blocks WordPress personnalisés
+        # Structure pour les blocks WordPress personnalisés
         mkdir -p "$THEME_PATH/src/blocks"
         mkdir -p "$THEME_PATH/src/components"
         
@@ -660,38 +653,29 @@ EOF
         echo -e "${CYAN}📦 Installation des dépendances Node.js...${NC}"
         cd "$THEME_PATH" && npm install && cd ../../../../../..
         
-        echo -e "${GREEN}✅ Build moderne configuré${NC}"
+        echo -e "${GREEN}✅ Blocks personnalisés configuré${NC}"
         echo -e "${CYAN}💡 Pour développer: cd $THEME_PATH && npm run dev${NC}"
     fi
     
-    echo -e "${GREEN}✅ Thème personnalisé créé et activé${NC}"
+    echo -e "${GREEN}✅ Thème personnalisé créé${NC}"
 fi
 
+echo -e "${CYAN}🛠️  Installation de WordPress...${NC}"
+make build && make start && make install-wordpress
+
 # Informations finales
-echo -e "\n${GREEN}🎉 Installation WordPress Bedrock terminée avec succès !${NC}"
+echo -e "\n${GREEN}🦆 Installation WordPress Bedrock terminée avec succès !${NC}"
 echo -e "\n${PURPLE}📋 Informations du projet :${NC}"
 echo -e "  ${CYAN}Nom:${NC} $PROJECT_NAME"
 echo -e "  ${CYAN}Type:${NC} WordPress Bedrock"
 echo -e "  ${CYAN}Thème de blocks personnalisé:${NC} $CREATE_CUSTOM_THEME"
-echo -e "  ${CYAN}Blocks personnalisés:${NC} $USE_MODERN_BUILD"
+echo -e "  ${CYAN}Blocks personnalisés:${NC} $USE_CUSTOM_BLOCKS"
 echo -e "\n${PURPLE}🗄️  Base de données :${NC}"
 echo -e "  ${CYAN}Type:${NC} $DB_TYPE"
 echo -e "  ${CYAN}Version:${NC} $DB_VERSION"
-echo -e "  ${CYAN}Hôte:${NC} localhost"
+echo -e "  ${CYAN}Hôte:${NC} $DB_TYPE"
 echo -e "  ${CYAN}Port:${NC} $DB_PORT"
 echo -e "  ${CYAN}Utilisateur:${NC} $DB_USER"
 echo -e "  ${CYAN}Nom de la base:${NC} $DB_NAME"
-
-echo -e "\n${YELLOW}🚀 Prochaines étapes :${NC}"
-echo -e "\n${CYAN}1. Pour installer WordPress :${NC}"
-echo -e "   ${YELLOW}make build && make start && make install-wordpress${NC}"
-echo -e "2. ${CYAN}Accéder au site :${NC} http://localhost:8080"
-echo -e "3. ${CYAN}Accéder à l'admin :${NC} http://localhost:8080/wp/wp-admin"
-if [ "$CREATE_CUSTOM_THEME" = "true" ]; then
-    echo -e "4. ${CYAN}Personnaliser le thème :${NC} app/web/app/themes/${PROJECT_NAME}-theme/"
-fi
-if [ "$USE_MODERN_BUILD" = "true" ]; then
-    echo -e "5. ${CYAN}Développer avec Vite :${NC} cd app/web/app/themes/${PROJECT_NAME}-theme && npm run dev"
-fi
 
 echo -e "\n${GREEN}✨ Votre environnement WordPress Bedrock est prêt !${NC}"

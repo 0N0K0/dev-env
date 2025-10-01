@@ -53,8 +53,8 @@ configure_symfony_preset() {
         USE_GRAPHQL="Non"
     fi
     
-    # WebSocket pour Symfony
-    WEBSOCKET_CHOICE=$(ask_choice "🔌 WebSocket" 3 "Mercure (native Symfony)" "Socket.IO" "Non")
+    # WebSocket
+    WEBSOCKET_CHOICE=$(ask_choice "🔌 WebSocket" 3 "Mercure" "Socket.IO" "Non")
     
     # Configuration WebSocket selon le choix
     if [ "$WEBSOCKET_CHOICE" = "Non" ]; then
@@ -62,7 +62,7 @@ configure_symfony_preset() {
         WEBSOCKET_TYPE="none"
     else
         USE_WEBSOCKET="Oui"
-        if [ "$WEBSOCKET_CHOICE" = "Mercure (native Symfony)" ]; then
+        if [ "$WEBSOCKET_CHOICE" = "Mercure" ]; then
             WEBSOCKET_TYPE="mercure"
         else
             WEBSOCKET_TYPE="socketio"
@@ -82,12 +82,10 @@ configure_wordpress_preset() {
     
     # Questions spécifiques à WordPress
     CREATE_CUSTOM_THEME=$(ask_choice "🎨 Créer un thème personnalisé avec blocks" 1 "Oui" "Non")
-    
-    # Build moderne (seulement si thème personnalisé)
     if [ "$CREATE_CUSTOM_THEME" = "Oui" ]; then
-        USE_MODERN_BUILD=$(ask_choice "⚡ Build moderne (React + Vite + TypeScript)" 1 "Oui" "Non")
+        USE_CUSTOM_BLOCKS=$(ask_choice "⚡ Créer des blocks personnalisés (React + Vite + TypeScript)" 1 "Oui" "Non")
     else
-        USE_MODERN_BUILD="Non"
+        USE_CUSTOM_BLOCKS="Non"
     fi
     
     # WordPress n'utilise pas de WebSocket
@@ -137,7 +135,7 @@ apply_wordpress_config() {
     echo -e "  ${CYAN}Serveur web:${NC} $WEBSERVER"
     echo -e "  ${CYAN}Base de données:${NC} $DB_TYPE"
     echo -e "  ${CYAN}Thème personnalisé:${NC} $CREATE_CUSTOM_THEME"
-    [ "$CREATE_CUSTOM_THEME" = "Oui" ] && echo -e "  ${CYAN}Build moderne:${NC} $USE_MODERN_BUILD"
+    [ "$CREATE_CUSTOM_THEME" = "Oui" ] && echo -e "  ${CYAN}Build moderne:${NC} $USE_CUSTOM_BLOCKS"
     echo -e "  ${CYAN}Mailpit:${NC} $USE_MAILPIT"
     
     confirm=$(ask_yes_no "Continuer avec cette configuration ?" "true")
@@ -158,9 +156,9 @@ write_common_env_config() {
     local project_type="$1"  # "api" ou "app"
     
     # Réinitialiser .env depuis le template pour avoir une base propre
-    if [ -f "scripts/init_env.sh" ]; then
+    if [ -f "scripts/files_handlers/init_env.sh" ]; then
         rm -f .env
-        bash scripts/init_env.sh
+        bash scripts/files_handlers/init_env.sh
     else
         echo -e "${RED}❌ Impossible d'initialiser .env${NC}"
         exit 1
@@ -217,7 +215,7 @@ write_symfony_env() {
     echo "SYMFONY_PROJECT=true" >> .env
     echo "USE_API_PLATFORM=$([ "$USE_API_PLATFORM" = "Oui" ] && echo "true" || echo "false")" >> .env
     echo "USE_GRAPHQL=$([ "$USE_GRAPHQL" = "Oui" ] && echo "true" || echo "false")" >> .env
-    
+        
     echo -e "${GREEN}✅ Configuration sauvegardée dans .env${NC}"
 }
 
@@ -232,26 +230,38 @@ write_wordpress_env() {
     echo "WORDPRESS_PROJECT=true" >> .env
     echo "USE_BEDROCK=true" >> .env
     echo "CREATE_CUSTOM_THEME=$([ "$CREATE_CUSTOM_THEME" = "Oui" ] && echo "true" || echo "false")" >> .env
-    echo "USE_MODERN_BUILD=$([ "$USE_MODERN_BUILD" = "Oui" ] && echo "true" || echo "false")" >> .env
+    echo "USE_CUSTOM_BLOCKS=$([ "$USE_CUSTOM_BLOCKS" = "Oui" ] && echo "true" || echo "false")" >> .env
+
+    echo "" >> .env
+    echo "# Configuration d'administration WordPress" >> .env
+    echo " WP_ADMIN_USER=admin" >> .env
+    echo "WP_ADMIN_PASSWORD=root" >> .env
+    echo "WP_ADMIN_EMAIL=admin@example.com" >> .env
+    echo "WP_SITE_URL=http://localhost" >> .env
     
     echo -e "${GREEN}✅ Configuration sauvegardée dans .env${NC}"
 }
 
-# Fonction pour créer le projet Symfony
-create_symfony_project() {
+create_common_project() {
     echo -e "\n${BLUE}🔧 Génération des configurations...${NC}"
     
     # Générer les configurations Docker
-    if [ -f "scripts/generate_compose.sh" ]; then
-        bash scripts/generate_compose.sh
+    if [ -f "scripts/files_handlers/generate_compose.sh" ]; then
+        bash scripts/files_handlers/generate_compose.sh
     fi
     
-    if [ -f "scripts/generate_configs.sh" ]; then
-        bash scripts/generate_configs.sh
+    if [ -f "scripts/files_handlers/generate_configs.sh" ]; then
+        bash scripts/files_handlers/generate_configs.sh
     fi
-        
-    echo -e "\n${GREEN}� Lancement de l'installation automatique complète...${NC}"
+
+    echo -e "\n${GREEN}Lancement de l'installation automatique complète...${NC}"
     echo -e "${CYAN}Cette installation va :${NC}"
+    }
+
+# Fonction pour créer le projet Symfony
+create_symfony_project() {
+    create_common_project
+    
     echo -e "  • Installer Symfony CLI"
     echo -e "  • Installer Symfony avec toutes les dépendances"
     echo -e "  • Configurer la base de données"
@@ -261,42 +271,31 @@ create_symfony_project() {
     echo -e "\n${YELLOW}⏳ Cela peut prendre quelques minutes...${NC}"
     
     # Lancer le script d'automatisation
-    if [ -f "scripts/setup_symfony.sh" ]; then
-        bash scripts/setup_symfony.sh
+    if [ -f "scripts/presets/setup_symfony.sh" ]; then
+        bash scripts/presets/setup_symfony.sh
     else
-        echo -e "${RED}❌ Script scripts/setup_symfony.sh non trouvé${NC}"
+        echo -e "${RED}❌ Script scripts/presets/setup_symfony.sh non trouvé${NC}"
         exit 1
     fi
 }
 
 # Fonction pour créer le projet WordPress
 create_wordpress_project() {
-    echo -e "\n${BLUE}🔧 Génération des configurations...${NC}"
-    
-    # Générer les configurations Docker
-    if [ -f "scripts/generate_compose.sh" ]; then
-        bash scripts/generate_compose.sh
-    fi
-    
-    if [ -f "scripts/generate_configs.sh" ]; then
-        bash scripts/generate_configs.sh
-    fi
-    
-    echo -e "\n${GREEN}� Lancement de l'installation automatique complète...${NC}"
-    echo -e "${CYAN}Cette installation va :${NC}"
+    create_common_project
+
     echo -e "  • Installer WP-CLI"
     echo -e "  • Installer WordPress Bedrock"
     echo -e "  • Configurer la base de données"
     [ "$CREATE_CUSTOM_THEME" = "Oui" ] && echo -e "  • Créer un thème personnalisé"
-    [ "$USE_MODERN_BUILD" = "Oui" ] && echo -e "  • Configurer React + Vite + TypeScript"
+    [ "$USE_CUSTOM_BLOCKS" = "Oui" ] && echo -e "  • Configurer React + Vite + TypeScript"
     
     echo -e "\n${YELLOW}⏳ Cela peut prendre quelques minutes...${NC}"
     
     # Lancer le script d'automatisation
-    if [ -f "scripts/setup_wordpress.sh" ]; then
-        bash scripts/setup_wordpress.sh
+    if [ -f "scripts/presets/setup_wordpress.sh" ]; then
+        bash scripts/presets/setup_wordpress.sh
     else
-        echo -e "${RED}❌ Script scripts/setup_wordpress.sh non trouvé${NC}"
+        echo -e "${RED}❌ Script scripts/presets/setup_wordpress.sh non trouvé${NC}"
         exit 1
     fi
 }

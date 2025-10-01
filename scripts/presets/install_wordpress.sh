@@ -24,13 +24,13 @@ fi
 # Lire la configuration depuis .env
 PROJECT_NAME=$(grep "^PROJECT_NAME=" .env | cut -d'=' -f2)
 CREATE_CUSTOM_THEME=$(grep "^CREATE_CUSTOM_THEME=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
-USE_MODERN_BUILD=$(grep "^USE_MODERN_BUILD=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
+USE_CUSTOM_BLOCKS=$(grep "^USE_CUSTOM_BLOCKS=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
 WP_ADMIN_USER=$(grep "^WP_ADMIN_USER=" .env | cut -d'=' -f2 2>/dev/null || echo "admin")
 WP_ADMIN_PASSWORD=$(grep "^WP_ADMIN_PASSWORD=" .env | cut -d'=' -f2 2>/dev/null || echo "root")
 WP_ADMIN_EMAIL=$(grep "^WP_ADMIN_EMAIL=" .env | cut -d'=' -f2 2>/dev/null || echo "admin@example.com")
 WP_SITE_URL=$(grep "^WP_SITE_URL=" .env | cut -d'=' -f2 2>/dev/null || echo "http://localhost")
 
-echo -e "\n${CYAN}📋 Configuration WordPress :${NC}"
+echo -e "\n${CYAN}📋 Configuration d'administration WordPress :${NC}"
 echo -e "  ${CYAN}Titre du site :${NC} $PROJECT_NAME"
 echo -e "  ${CYAN}URL du site :${NC} $WP_SITE_URL"
 echo -e "  ${CYAN}Utilisateur admin :${NC} $WP_ADMIN_USER"
@@ -74,7 +74,7 @@ if make exec SERVICE=app-php CMD="wp theme list --format=csv --allow-root" | gre
 fi
 
 # Informations finales
-echo -e "\n${GREEN}🎉 Installation WordPress terminée avec succès !${NC}"
+echo -e "\n${GREEN}🦆 Installation WordPress terminée avec succès !${NC}"
 echo -e "\n${PURPLE}🔑 Informations de connexion :${NC}"
 echo -e "  ${CYAN}URL du site :${NC} $WP_SITE_URL"
 echo -e "  ${CYAN}URL Admin :${NC} $WP_SITE_URL/wp/wp-admin"
@@ -88,9 +88,6 @@ echo -e "2. ${CYAN}Accéder à l'admin :${NC} http://localhost:8080/wp/wp-admin"
 if [ "$CREATE_CUSTOM_THEME" = "true" ]; then
     echo -e "3. ${CYAN}Personnaliser le thème :${NC} app/web/app/themes/${PROJECT_NAME}-theme/"
 fi
-if [ "$USE_MODERN_BUILD" = "true" ]; then
+if [ "$USE_CUSTOM_BLOCKS" = "true" ]; then
     echo -e "4. ${CYAN}Développer avec Vite :${NC} cd app/web/app/themes/${PROJECT_NAME}-theme && npm run dev"
 fi
-
-
-echo -e "\n${GREEN}✨ WordPress est prêt à utiliser !${NC}"

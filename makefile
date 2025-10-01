@@ -1,8 +1,9 @@
-# Liste des backends, bases de données et serveurs web disponibles
-TYPES = api app
+# Liste des types, backends, bases de données et serveurs web disponibles
+TYPES = api (JSON), app (HTML)
 BACKENDS = php node go python
 DBS = postgres mysql
 WEBSERVERS = apache nginx
+WEBSOCKET = socketio mercure (native Symfony)
 
 # Fonction pour composer les fichiers Docker Compose
 DB_PROFILE = $(shell grep DB_TYPE .env | cut -d'=' -f2 | sed 's/postgres/postgres/' | sed 's/mysql/mysql/')
@@ -18,14 +19,14 @@ endif
 
 # Commandes Docker Compose
 start:
-	@if [ ! -f ".env" ]; then bash scripts/init_env.sh; fi
+	@if [ ! -f ".env" ]; then bash scripts/files_handlers/init_env.sh; fi
 	@cd docker && docker compose --env-file ../.env $(COMPOSE_FILES) up -d
 
 stop:
 	@cd docker && docker compose --env-file ../.env $(COMPOSE_FILES) down
 
 build:
-	@if [ ! -f ".env" ]; then bash scripts/init_env.sh; fi
+	@if [ ! -f ".env" ]; then bash scripts/files_handlers/init_env.sh; fi
 	@cd docker && docker compose --env-file ../.env $(COMPOSE_FILES) up --build -d
 
 clean:
@@ -75,13 +76,12 @@ endif
 config:
 	@echo "⚙️  Configuration actuelle :"
 	@echo "   Projet: $(shell grep "^PROJECT_NAME=" .env | cut -d'=' -f2)"
+	@echo "   Type: $(shell grep "^TYPE=" .env | cut -d'=' -f2 2>/dev/null || echo 'api')"
 	@echo "   Backend: $(shell grep "^BACKEND=" .env | cut -d'=' -f2) $(shell grep BACKEND_VERSION .env | cut -d'=' -f2)"
 	@echo "   Serveur web: $(shell grep WEBSERVER .env | cut -d'=' -f2)"
 	@echo "   Base de données: $(shell grep "^DB_TYPE=" .env | cut -d'=' -f2) $(shell grep DB_VERSION .env | cut -d'=' -f2)"
-	@echo "   Type: $(shell grep "^TYPE=" .env | cut -d'=' -f2 2>/dev/null || echo 'api')"
 	@echo "   Mailpit: $(shell grep USE_MAILPIT .env | cut -d'=' -f2)"
 	@echo "   WebSocket: $(shell grep USE_WEBSOCKET .env | cut -d'=' -f2) ($(shell grep WEBSOCKET_TYPE .env | cut -d'=' -f2))"
-	@echo ""
 
 # Initialisation du projet
 init-project:
@@ -95,56 +95,43 @@ init-project:
 # Nettoyer le template
 clean-project:
 	@echo "🧹 Nettoyage du template pour la configuration actuelle..."
-	@$(eval BACKEND := $(shell grep "^BACKEND=" .env | cut -d'=' -f2))
-	@$(eval WEBSERVER := $(shell grep "^WEBSERVER=" .env | cut -d'=' -f2))
-	@$(eval DB_TYPE := $(shell grep "^DB_TYPE=" .env | cut -d'=' -f2))
-	@$(eval TYPE := $(shell grep "^TYPE=" .env | cut -d'=' -f2 2>/dev/null || echo 'api'))
-	@$(eval USE_MAILPIT := $(shell grep "^USE_MAILPIT=" .env | cut -d'=' -f2))
-	@$(eval USE_WEBSOCKET := $(shell grep "^USE_WEBSOCKET=" .env | cut -d'=' -f2))
-	@$(eval BACKEND_VERSION := $(shell grep "^BACKEND_VERSION=" .env | cut -d'=' -f2))
-	@$(eval DB_VERSION := $(shell grep "^DB_VERSION=" .env | cut -d'=' -f2))
-	@echo "   Configuration détectée: $(BACKEND) $(BACKEND_VERSION) + $(WEBSERVER) + $(DB_TYPE) $(DB_VERSION) ($(TYPE))"
-	@if [ "$(USE_MAILPIT)" = "true" ]; then echo "   Mailpit: activé"; else echo "   Mailpit: désactivé"; fi
-	@if [ "$(USE_WEBSOCKET)" = "true" ]; then echo "   WebSocket: activé"; else echo "   WebSocket: désactivé"; fi
-	@echo ""
-	@echo "🔧 Délégation du nettoyage au script shell..."
 	@bash clean_project.sh $(BACKEND) $(WEBSERVER) $(DB_TYPE) $(USE_MAILPIT) $(USE_WEBSOCKET) $(TYPE)
 
 
 # Installation de WordPress via WP-CLI (après build/start)
-install-wordpress:
-	@echo "📚 Installation de WordPress via WP-CLI..."
-	@if [ -f "scripts/install_wordpress.sh" ]; then \
-		bash scripts/install_wordpress.sh; \
+install-wordpress: build start
+    @echo "📚 Installation de WordPress via WP-CLI..."
+	@if [ -f "scripts/presets/install_wordpress.sh" ]; then \
+    	bash scripts/presets/install_wordpress.sh
 	else \
-		echo "❌ Script scripts/install_wordpress.sh non trouvé"; \
+		echo "❌ Script scripts/presets/install_wordpress.sh non trouvé"; \
 	fi
 
 help:
 	@echo ""
 	@echo "🔧 Commandes disponibles :"
-	@echo "  make config    # Afficher la configuration actuelle"
-	@echo "  make init-project # Initialisation du projet"
-	@echo "  make install-wordpress # 📚 Installation WordPress via WP-CLI (après build/start)"
-	@echo "  make clean-project # Nettoyer le template (supprimer les éléments non utilisés)"
-	@echo "  make start     # Démarrer l'environnement Docker"
-	@echo "  make stop      # Arrêter les conteneurs"
-	@echo "  make build     # Rebuilder les conteneurs"
-	@echo "  make status    # Voir l'état des conteneurs"
-	@echo "  make logs      # Voir les logs des conteneurs"
+	@echo "  make config                                   # Afficher la configuration actuelle"
+	@echo "  make init-project                             # Initialisation du projet"
+	@echo "  make install-wordpress                        # Installation WordPress via WP-CLI (après build/start)"
+	@echo "  make clean-project                            # Nettoyer le template (supprimer les éléments non utilisés par le projet)"
+	@echo "  make start                                    # Démarrer l'environnement Docker"
+	@echo "  make stop                                     # Arrêter les conteneurs"
+	@echo "  make build                                    # Rebuilder les conteneurs"
+	@echo "  make status                                   # Voir l'état des conteneurs"
+	@echo "  make logs                                     # Voir les logs des conteneurs"
 	@echo "  make exec SERVICE=<service> CMD=\"<command>\" # Exécuter une commande dans un conteneur"
-	@echo "  make mysql-cli # Connexion directe à MySQL"
-	@echo "  make postgres-cli # Connexion directe à PostgreSQL"
-	@echo "  make mysql-query SQL=\"<requête>\" # Exécuter une requête MySQL"
-	@echo "  make postgres-query SQL=\"<requête>\" # Exécuter une requête PostgreSQL"
-	@echo "  make help      # Afficher cette aide"
+	@echo "  make mysql-cli                                # Connexion directe à MySQL"
+	@echo "  make postgres-cli                             # Connexion directe à PostgreSQL"
+	@echo "  make mysql-query SQL=\"<requête>\"            # Exécuter une requête MySQL"
+	@echo "  make postgres-query SQL=\"<requête>\"         # Exécuter une requête PostgreSQL"
+	@echo "  make help                                     # Afficher cette aide"
 	@echo ""
-	@echo "🎯 Types d'application : api (JSON), app (HTML)"
+	@echo "🎯 Types d'application : $(TYPES)"
 	@echo "📦 Backends disponibles : $(BACKENDS)"
 	@echo "🗄️ Bases de données disponibles : $(DBS)"
 	@echo "🌐 Serveurs web disponibles : $(WEBSERVERS)"
-	@echo "🔌 WebSocket disponibles : socketio, mercure (native Symfony)"
+	@echo "🔌 WebSocket disponibles : $(WEBSOCKET)"
 	@echo ""
 	@echo "🎯 Options d'installation disponibles :"
-	@echo "   • ⚙️  Configuration Manuelle : Configuration détaillée étape par étape"
+	@echo "   • ⚙️ Configuration Manuelle : Configuration détaillée étape par étape"
 	@echo "   • 🎯 Presets Rapides : Symfony API ou WordPress Bedrock optimisés"

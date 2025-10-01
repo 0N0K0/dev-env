@@ -34,7 +34,7 @@ USE_WEBSOCKET=$(grep "^USE_WEBSOCKET=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r
 WEBSOCKET_TYPE=$(grep "^WEBSOCKET_TYPE=" "$ENV_FILE" | cut -d'=' -f2 | tr -d '\n\r')
 
 # Noms des services dynamiques
-WEB_SERVICE="$WEBSERVER"                    # nginx ou apache
+WEB_SERVICE="$WEBSERVER"                   # nginx ou apache
 BACKEND_SERVICE="$TYPE-$BACKEND"           # api-php, app-nodejs, etc.
 DB_SERVICE="$DB_TYPE"                      # postgres ou mysql
 
@@ -49,8 +49,8 @@ mkdir -p docker
 
 # Générer le docker-compose.yml principal
 cat > "docker/docker-compose.yml" << EOF
-# Docker Compose généré dynamiquement - NE PAS MODIFIER MANUELLEMENT
-# Utilisez 'make switch' pour regénérer ce fichier
+# Docker Compose généré dynamiquement
+# Utilisez 'make init-project' pour regénérer ce fichier
 
 name: $PROJECT_NAME
 
@@ -130,7 +130,7 @@ echo "   ✅ docker-compose.yml principal généré"
 # Gérer le fichier mailpit
 if [ "$USE_MAILPIT" = "true" ]; then
     cat > "docker/docker-compose.mailpit.yml" << EOF
-# Configuration Mailpit - Générée automatiquement
+# Configuration Mailpit générée automatiquement
 
 services:
     mailpit:
@@ -153,24 +153,56 @@ fi
 
 # Gérer le fichier websocket
 if [ "$USE_WEBSOCKET" = "true" ]; then
-    cat > "docker/docker-compose.websocket.yml" << EOF
-# Configuration WebSocket ($WEBSOCKET_TYPE) - Générée automatiquement
+    if [ "$WEBSOCKET_TYPE" = "mercure" ]; then
+        # Configuration Mercure Hub pour Symfony
+        cat > "docker/docker-compose.websocket.yml" << EOF
+# Configuration Mercure Hub générée automatiquement
 
 services:
-    websocket-$WEBSOCKET_TYPE:
-        container_name: $PROJECT_NAME-websocket-$WEBSOCKET_TYPE
-        build:
-            context: ..
-            dockerfile: ./docker/services/websocket/Dockerfile
+    mercure:
+        container_name: $PROJECT_NAME-mercure
+        image: dunglas/mercure
+        restart: unless-stopped
+        environment:
+            SERVER_NAME: ':3001'
+            MERCURE_PUBLISHER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+            MERCURE_SUBSCRIBER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+            # Permettre les connexions depuis le développement
+            MERCURE_EXTRA_DIRECTIVES: |
+                cors_origins http://localhost http://localhost:80
         ports:
             - "3001:3001"
         volumes:
-            - ./services/websocket:/app
+            - mercure_data:/data
+            - mercure_config:/config
+        networks:
+            - $PROJECT_NAME
+
+volumes:
+    mercure_data:
+    mercure_config:
+EOF
+    else
+        # Configuration Socket.IO
+        cat > "docker/docker-compose.websocket.yml" << EOF
+# Configuration Socket.IO générée automatiquement
+
+services:
+    socketio:
+        container_name: $PROJECT_NAME-socketio
+        build:
+            context: ..
+            dockerfile: ./docker/services/socketio/Dockerfile
+        ports:
+            - "3001:3001"
+        volumes:
+            - ./services/socketio:/app
         networks:
             - $PROJECT_NAME
         environment:
-            - WEBSOCKET_TYPE=$WEBSOCKET_TYPE
+            - WEBSOCKET_TYPE=socketio
 EOF
+    fi
     echo "   ✅ docker-compose.websocket.yml généré"
 else
     # Supprimer le fichier s'il existe et que WebSocket est désactivé
@@ -180,6 +212,5 @@ else
     fi
 fi
 
-echo "🎉 Génération du docker-compose.yml terminée !"
+echo "🦆 Génération du docker-compose.yml terminée !"
 echo "   📁 Fichiers générés dans docker/"
-echo "   🚀 Utilisez 'make build && make start' pour lancer les services"

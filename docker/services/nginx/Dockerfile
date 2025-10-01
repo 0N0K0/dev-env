@@ -1,9 +1,9 @@
 FROM nginx:alpine
 
-# Copy dynamic nginx configuration
+# Copier la configuration Nginx dynamique
 COPY ./docker/services/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create web directory
+# Créer le répertoire web
 RUN mkdir -p /var/www/html
 
 EXPOSE 80

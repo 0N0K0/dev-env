@@ -26,8 +26,7 @@ esac
 
 echo "🔧 Génération du fichier $BACKEND en mode $TYPE..."
 
-# Lire les variables de configuration depuis .env
-# Détecter le bon chemin pour le fichier .env
+# Détecter le bon chemin pour le fichier .env et lire les variables de configuration
 if [ -f ".env" ]; then
     ENV_FILE=".env"
     echo "   📋 Configuration lue depuis ./.env"
@@ -319,7 +318,7 @@ EOF
   }
 }
 EOF
-    echo "   ✅ Fichier package.json créé pour Node.js (dépendances gérées localement)"
+    echo "   ✅ Fichier package.json créé pour Node.js"
     echo "   💡 Utilisez 'npm install express' pour ajouter les dépendances"
 }
 

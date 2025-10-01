@@ -23,7 +23,7 @@ PROJECT_NAME=$(grep "^PROJECT_NAME=" .env | cut -d'=' -f2)
 USE_API_PLATFORM=$(grep "^USE_API_PLATFORM=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
 USE_GRAPHQL=$(grep "^USE_GRAPHQL=" .env | cut -d'=' -f2 2>/dev/null || echo "false")
 
-echo -e "${BLUE}🚀 Installation automatique Symfony: $PROJECT_NAME${NC}"
+echo -e "${BLUE}🚀 Installation de Symfony${NC}"
 
 # Installer Symfony CLI uniquement si nécessaire
 echo -e "\n${YELLOW}🔧 Vérification de Symfony CLI...${NC}"
@@ -48,7 +48,7 @@ fi
 
 # Créer le projet Symfony avec Composer global
 echo -e "\n${YELLOW}🎼 Installation de Symfony avec Composer...${NC}"
-composer create-project symfony/skeleton ./api --no-interaction
+composer create-project symfony/skeleton ./api
 echo -e "${GREEN}✅ Projet Symfony créé${NC}"
 
 # Installer les dépendances de base
@@ -56,29 +56,36 @@ echo -e "\n${YELLOW}📚 Installation des dépendances Symfony...${NC}"
 
 # API de base
 echo -e "${CYAN}- Installation du pack API...${NC}"
-composer require api --no-interaction
+composer require api
 
 # Doctrine ORM
 echo -e "${CYAN}- Installation de Doctrine ORM...${NC}"
-composer require doctrine --no-interaction
+composer require doctrine
 
 # API Platform si demandé
 if [ "$USE_API_PLATFORM" = "true" ]; then
     echo -e "${CYAN}- Installation d'API Platform...${NC}"
-    composer require api-platform/api-pack --no-interaction
+    composer require api-platform/api-pack
 fi
 
 # GraphQL si demandé
 if [ "$USE_GRAPHQL" = "true" ]; then
     echo -e "${CYAN}- Installation de GraphQL...${NC}"
-    composer require webonyx/graphql-php-bundle --no-interaction
+    composer require webonyx/graphql-php-bundle
+fi
+
+# Mercure si configuré
+USE_MERCURE=$(grep "^WEBSOCKET_TYPE=" .env | cut -d'=' -f2 2>/dev/null)
+if [ "$USE_MERCURE" = "mercure" ]; then
+    echo -e "${CYAN}- Installation de Mercure...${NC}"
+    composer require symfony/mercure-bundle
 fi
 
 # Outils de développement
 echo -e "\n${YELLOW}🔧 Installation des outils de développement...${NC}"
-composer require --dev symfony/maker-bundle --no-interaction
-composer require --dev doctrine/doctrine-fixtures-bundle --no-interaction
-composer require --dev symfony/profiler-pack --no-interaction
+composer require --dev symfony/maker-bundle
+composer require --dev doctrine/doctrine-fixtures-bundle
+composer require --dev symfony/profiler-pack
 
 # Configuration de l'environnement
 echo -e "\n${YELLOW}⚙️  Configuration de l'environnement...${NC}"
@@ -96,18 +103,31 @@ cat > .env.local << EOF
 DATABASE_URL="${DB_TYPE}://${DB_USER}:${DB_PASSWORD}@${DB_TYPE}:${DB_PORT}/${DB_NAME}?serverVersion=${DB_VERSION}&charset=utf8"
 EOF
 
+# Ajouter la configuration Mercure si activé
+if [ "$USE_MERCURE" = "mercure" ]; then
+    cat >> .env.local << EOF
+
+# Configuration Mercure
+MERCURE_URL=http://mercure:3001/.well-known/mercure
+MERCURE_PUBLIC_URL=http://localhost:3001/.well-known/mercure
+MERCURE_JWT_SECRET=!ChangeThisMercureHubJWTSecretKey!
+EOF
+    echo -e "${GREEN}✅ Configuration Mercure ajoutée${NC}"
+fi
+
 echo -e "${GREEN}✅ Fichier .env.local créé${NC}"
 
 # Revenir au dossier racine
 cd ..
 
 # Informations finales
-echo -e "\n${GREEN}🎉 Installation Symfony terminée avec succès !${NC}"
+echo -e "\n${GREEN}🦆 Installation Symfony terminée avec succès !${NC}"
 echo -e "\n${PURPLE}📋 Informations du projet :${NC}"
 echo -e "  ${CYAN}Nom:${NC} $PROJECT_NAME"
 echo -e "  ${CYAN}Type:${NC} API Symfony"
 echo -e "  ${CYAN}API Platform:${NC} $USE_API_PLATFORM"
 echo -e "  ${CYAN}GraphQL:${NC} $USE_GRAPHQL"
+echo -e "  ${CYAN}Mercure:${NC} $USE_MERCURE"
 echo -e "\n${PURPLE}🗄️  Base de données :${NC}"
 echo -e "  ${CYAN}Type:${NC} $DB_TYPE"
 echo -e "  ${CYAN}Version:${NC} $DB_VERSION"
@@ -116,10 +136,7 @@ echo -e "  ${CYAN}Port:${NC} $DB_PORT"
 echo -e "  ${CYAN}Utilisateur:${NC} $DB_USER"
 echo -e "  ${CYAN}Nom de la base:${NC} $DB_NAME"
 
-echo -e "\n${YELLOW}🚀 Votre API Symfony est prête ! Commencez à développer :${NC}"
-echo -e "1. ${CYAN}Créer vos entités :${NC} make exec SERVICE=api-php CMD=\"php bin/console make:entity\""
-echo -e "2. ${CYAN}Générer des migrations :${NC} make exec SERVICE=api-php CMD=\"php bin/console make:migration\""
-echo -e "3. ${CYAN}Appliquer les migrations :${NC} make exec SERVICE=api-php CMD=\"php bin/console doctrine:migrations:migrate\""
+echo -e "\n${GREEN}✨ Votre environnement Symfony est prêt !${NC}"
 echo -e "4. ${CYAN}Accéder à votre API :${NC} http://localhost"
 echo -e "5. ${CYAN}Shell interactif :${NC} make exec SERVICE=api-php CMD=\"bash\""
 
@@ -127,4 +144,6 @@ if [ "$USE_API_PLATFORM" = "true" ]; then
     echo -e "6. ${CYAN}Interface API Platform :${NC} http://localhost/api"
 fi
 
-echo -e "\n${GREEN}✨ Votre environnement Symfony est prêt !${NC}"
+if [ "$USE_MERCURE" = "mercure" ]; then
+    echo -e "7. ${CYAN}Hub Mercure :${NC} http://localhost:3001/.well-known/mercure"
+fi

@@ -1,6 +1,5 @@
 #!/bin/bash
-# Script de nettoyage complet du template dev-env
-# Compatible avec la nouvelle structure organisée
+# Script de nettoyage complet du template
 # Usage: ./scripts/clean_project.sh
 
 set -e
@@ -21,6 +20,7 @@ read_env_config() {
     fi
     
     PROJECT_NAME=$(grep "^PROJECT_NAME=" .env | cut -d'=' -f2)
+    TYPE=$(grep "^TYPE=" .env | cut -d'=' -f2)
     BACKEND=$(grep "^BACKEND=" .env | cut -d'=' -f2)
     WEBSERVER=$(grep "^WEBSERVER=" .env | cut -d'=' -f2)
     DB_TYPE=$(grep "^DB_TYPE=" .env | cut -d'=' -f2)
@@ -31,6 +31,7 @@ read_env_config() {
     print_title "NETTOYAGE DU PROJET"
     echo -e "${CYAN}Configuration détectée :${NC}"
     echo -e "   Projet: ${GREEN}$PROJECT_NAME${NC}"
+    echo -e "   Type: ${GREEN}$TYPE${NC}"
     echo -e "   Backend: ${GREEN}$BACKEND${NC}"
     echo -e "   Serveur web: ${GREEN}$WEBSERVER${NC}"
     echo -e "   Base de données: ${GREEN}$DB_TYPE${NC}"
@@ -49,17 +50,8 @@ read_env_config
 confirm_cleanup() {
     echo -e "\n${YELLOW}⚠️  ATTENTION : Cette opération va supprimer définitivement :${NC}"
     echo -e "   ${RED}• Les services Docker non utilisés${NC}"
-    echo -e "   ${RED}• Les dépendances inutiles${NC}"
-    echo -e "   ${RED}• Les configurations obsolètes${NC}"
-    
-    if [ "$USE_MAILPIT" = "false" ]; then
-        echo -e "   ${RED}• Le service Mailpit${NC}"
-    fi
-    
-    if [ "$USE_WEBSOCKET" = "false" ]; then
-        echo -e "   ${RED}• Le service WebSocket${NC}"
-    fi
-    
+    echo -e "   ${RED}• Les fichiers de scripts${NC}"
+    echo -e "   ${RED}• Les commandes obsolètes${NC}"
     echo ""
     confirm=$(ask_yes_no "Voulez-vous continuer le nettoyage" "false")
     
@@ -88,6 +80,13 @@ cleanup_docker_services() {
             echo -e "   ${GREEN}✅ Supprimé: docker/services/$webserver_dir/${NC}"
         fi
     done
+
+    # WebSocket non utilisé
+    if [ "$WEBSOCKET_TYPE" != "socketio" ] && [ -d "docker/services/socketio" ]; then
+        rm -rf "docker/services/socketio"
+        echo -e "   ${GREEN}✅ Supprimé: docker/services/socketio/${NC}"
+    fi
+
 }
 
 # 2. Nettoyage du Makefile
@@ -224,7 +223,7 @@ EOF
 
 # Fonction de résumé final
 show_final_summary() {
-    echo -e "\n${GREEN}🎉 NETTOYAGE TERMINÉ !${NC}"
+    echo -e "\n${GREEN}🦆 NETTOYAGE TERMINÉ !${NC}"
     print_title "RÉSUMÉ"
     
     echo -e "${CYAN}📋 Configuration finale :${NC}"
@@ -232,7 +231,7 @@ show_final_summary() {
     echo -e "   ${YELLOW}Backend:${NC} ${GREEN}$BACKEND${NC} (docker/services/$BACKEND/)"
     echo -e "   ${YELLOW}Serveur web:${NC} ${GREEN}$WEBSERVER${NC} (docker/services/$WEBSERVER/)"
     echo -e "   ${YELLOW}Base de données:${NC} ${GREEN}$DB_TYPE${NC}"
-    echo -e "   ${YELLOW}Code source:${NC} ${GREEN}app/${NC}"
+    echo -e "   ${YELLOW}Code source:${NC} ${GREEN}$TYPE/${NC}"
     
     echo -e "\n${CYAN}🚀 Services actifs :${NC}"
     if [ "$USE_MAILPIT" = "true" ]; then
@@ -246,7 +245,17 @@ show_final_summary() {
     else
         echo -e "   ${RED}❌ WebSocket (désactivé)${NC}"
     fi
+        
+    echo -e "\n${PURPLE}💡 Prochaines étapes :${NC}"
+    echo -e "   ${CYAN}1.${NC} Utilisez ${GREEN}make build${NC} pour construire les services"
+    echo -e "   ${CYAN}2.${NC} Utilisez ${GREEN}make start${NC} pour démarrer l'environnement"
+    echo -e "   ${CYAN}3.${NC} Développez dans le dossier ${GREEN}$TYPE/${NC}"
     
+    echo -e "\n${YELLOW}⚠️  Note:${NC} Le dossier scripts/ complet sera supprimé après validation."
+}
+
+# Auto-suppression complète du dossier scripts avec confirmation
+cleanup_self() {    
     echo -e "\n${CYAN}🗑️  Scripts de développement dans scripts/:${NC}"
     if [ -d "scripts/" ]; then
         for script in scripts/*; do
@@ -257,23 +266,10 @@ show_final_summary() {
         done
         echo -e "   ${YELLOW}⚠️  Ces scripts seront supprimés si vous confirmez${NC}"
     fi
-    
-    echo -e "\n${PURPLE}💡 Prochaines étapes :${NC}"
-    echo -e "   ${CYAN}1.${NC} Utilisez ${GREEN}make build${NC} pour construire les services"
-    echo -e "   ${CYAN}2.${NC} Utilisez ${GREEN}make start${NC} pour démarrer l'environnement"
-    echo -e "   ${CYAN}3.${NC} Développez dans le dossier ${GREEN}app/${NC}"
-    
-    echo -e "\n${YELLOW}⚠️  Note:${NC} Le dossier scripts/ complet sera supprimé après validation."
-}
 
-# Auto-suppression complète du dossier scripts avec confirmation
-cleanup_self() {
-    echo -e "\n${YELLOW}🗑️  Suppression complète du dossier scripts/...${NC}"
-    
     self_cleanup=$(ask_yes_no "Supprimer complètement le dossier scripts/" "true")
     
     if [ "$self_cleanup" = "true" ]; then
-        # Se déplacer dans le répertoire parent pour éviter les conflits
         cd ..
         if rm -rf "scripts/" 2>/dev/null; then
             echo -e "   ${GREEN}✅ Dossier scripts/ complètement supprimé${NC}"

@@ -5,5 +5,5 @@ FROM node:${NODE_VERSION}
 WORKDIR /app
 COPY ./${SOURCE_DIR} /app
 
-# Dependencies managed locally with Homebrew npm
+# Dépendances gérées via Homebrew
 CMD ["npm", "start"]

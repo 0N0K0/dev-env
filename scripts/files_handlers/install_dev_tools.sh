@@ -1,18 +1,25 @@
 #!/bin/bash
 # Script d'installation des outils de développement via Homebrew
-# Installation sélective selon le backend configuré dans .env
+# Usage: ./install_dev_tools.sh
 
 set -e
 
-echo "🍺 Installation des outils de développement via Homebrew"
-echo "=================================================="
+# Charger les fonctions utilitaires communes
+if [ -f "scripts/utils.sh" ]; then
+    source scripts/utils.sh
+else
+    echo "❌ Fichier utils.sh non trouvé"
+    exit 1
+fi
+
+print_title "🍺 Installation des outils de développement via Homebrew"
 
 # Lecture de la configuration depuis .env
 ENV_FILE=".env"
 if [ ! -f "$ENV_FILE" ]; then
     ENV_FILE="../.env"
     if [ ! -f "$ENV_FILE" ]; then
-        echo "❌ Fichier .env introuvable. Lancez d'abord 'make switch BACKEND=<backend>'"
+        echo "❌ Fichier .env introuvable. Lancez d'abord 'make init-project'"
         exit 1
     fi
 fi
@@ -27,9 +34,10 @@ echo "📋 Configuration détectée :"
 echo "   Backend: $BACKEND"
 echo "   Type: $TYPE"  
 echo "   Serveur web: $WEBSERVER"
-echo "   WebSocket: $USE_WEBSOCKET"
 if [ "$USE_WEBSOCKET" = "true" ]; then
-    echo "   Type WebSocket: $WEBSOCKET_TYPE"
+    echo "   WebSocket: $WEBSOCKET_TYPE"
+else
+    echo "   WebSocket: désactivé"
 fi
 echo ""
 
@@ -38,7 +46,7 @@ if ! command -v brew &> /dev/null; then
     echo "❌ Homebrew n'est pas installé. Installation en cours..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-    echo "✅ Homebrew déjà installé"
+    echo "✅ Homebrew déjà disponible"
 fi
 
 # Mise à jour de Homebrew
@@ -51,7 +59,7 @@ install_if_missing() {
     local install_cmd=$2
     
     if command -v "$tool" &> /dev/null; then
-        echo "✅ $tool déjà installé"
+        echo "✅ $tool déjà disponible"
     else
         echo "📦 Installation de $tool..."
         eval "$install_cmd"
@@ -72,16 +80,14 @@ install_if_missing "docker" "brew install --cask docker"
 # Installation sélective selon le backend
 case "$BACKEND" in
     php)
-        echo "🐘 Installation des outils PHP complets (dev + debug)..."
+        echo "🐘 Installation des outils PHP..."
         install_if_missing "php" "brew install php"
         install_if_missing "composer" "brew install composer"
-        
-        echo "📦 Installation des outils PHP de développement..."
         install_if_missing "php-cs-fixer" "brew install php-cs-fixer"
                 
         # Outils Composer globaux
         if command -v composer &> /dev/null; then
-            echo "📦 Installation des packages Composer globaux..."
+            echo "📦 Installation des packages Composer..."
             composer global show phpunit/phpunit &> /dev/null || composer global require phpunit/phpunit
             composer global show phpstan/phpstan &> /dev/null || composer global require phpstan/phpstan
         fi
@@ -94,7 +100,7 @@ case "$BACKEND" in
         
         # Outils npm globaux
         if command -v npm &> /dev/null; then
-            echo "📦 Installation des outils npm globaux..."
+            echo "📦 Installation des outils npm..."
             npm list -g typescript &> /dev/null || npm install -g typescript
             npm list -g eslint &> /dev/null || npm install -g eslint
             npm list -g prettier &> /dev/null || npm install -g prettier
@@ -112,7 +118,7 @@ case "$BACKEND" in
         
         # Outils pip globaux
         if command -v pip3 &> /dev/null; then
-            echo "📦 Installation des outils pip globaux..."
+            echo "📦 Installation des outils pip..."
             pip3 show black &> /dev/null || pip3 install black
             pip3 show flake8 &> /dev/null || pip3 install flake8
             pip3 show pytest &> /dev/null || pip3 install pytest
@@ -138,43 +144,24 @@ case "$BACKEND" in
         ;;
         
     *)
-        echo "⚠️ Backend '$BACKEND' non reconnu. Installation des outils de base uniquement."
+        echo "⚠️ Backend '$BACKEND' non reconnu."
         ;;
 esac
 
 # Installation des outils WebSocket si activés
-if [ "$USE_WEBSOCKET" = "true" ]; then
-    echo "🔌 WebSocket activé ($WEBSOCKET_TYPE) - installation des outils associés..."
-    
-    case "$WEBSOCKET_TYPE" in
-        socketio)
-            if command -v npm &> /dev/null; then
-                echo "📦 Installation de Socket.IO..."
-                npm list -g socket.io &> /dev/null || npm install -g socket.io
-                echo "✅ Socket.IO installé"
-            else
-                echo "⚠️ npm non disponible, Socket.IO ne peut pas être installé"
-            fi
-            ;;
-        mercure)
-            if [ "$BACKEND" = "php" ]; then
-                echo "💡 Mercure (native Symfony) - aucun outil supplémentaire requis"
-                echo "   Mercure sera configuré automatiquement avec Symfony"
-            else
-                echo "⚠️ ATTENTION: Mercure est conçu pour PHP/Symfony uniquement"
-                echo "   Backend actuel: $BACKEND (incompatible avec Mercure)"
-            fi
-            ;;
-        *)
-            echo "⚠️ Type WebSocket '$WEBSOCKET_TYPE' non reconnu"
-            ;;
-    esac
-else
-    echo "🔌 WebSocket désactivé - aucun outil WebSocket installé"
+if [ "$USE_WEBSOCKET" = "true" ] && [ "$WEBSOCKET_TYPE" = "socketio" ]; then
+    echo "🔌 Installation des outils de WebSocket..."
+    if command -v npm &> /dev/null; then
+        echo "📦 Installation de Socket.IO..."
+        npm list -g socket.io &> /dev/null || npm install -g socket.io
+        echo "✅ Socket.IO installé"
+    else
+        echo "⚠️ npm non disponible, Socket.IO ne peut pas être installé"
+    fi
 fi
 
 echo ""
-echo "🎉 Installation terminée pour le backend $BACKEND !"
+echo "🦆 Installation terminée pour le backend $BACKEND !"
 echo "=================================================="
 
 # Résumé des outils installés selon le backend
@@ -223,14 +210,16 @@ echo "   httpie: $(http --version)"
 echo "   curl: $(curl --version | head -n1)"
 echo "   tree: $(tree --version | head -n1)"
 echo "   jq: $(jq --version)"
-echo "   node: $(node --version)"
-echo "   nvm: $(nvm --version)"
+if [ "$BACKEND" != "node" ]; then
+    echo "   node: $(node --version)"
+    echo "   npm: $(npm --version)"
+    command -v nvm &> /dev/null && echo "   nvm: installé"
+fi
 
 echo ""
 echo "Outils installés pour le backend '$BACKEND' !"
+echo ""
 echo "💡 Exemple d'utilisation :"
-echo "   npm install                       # Installer les dépendances"
-echo "   npm run dev                       # Lancer en mode développement"
 
 case "$BACKEND" in
     php)
@@ -239,6 +228,8 @@ case "$BACKEND" in
         echo "   php-cs-fixer fix                  # Formater le code"
         ;;
     node)
+        echo "   npm install                       # Installer les dépendances"
+        echo "   npm run dev                       # Lancer en mode développement"
         echo "   eslint src/                       # Vérifier la syntaxe"
         ;;
     python)
@@ -254,4 +245,4 @@ case "$BACKEND" in
 esac
 
 echo ""
-echo "🎉 Tous les outils de développement sont installés !"
+echo "🦆 Tous les outils de développement sont installés !"

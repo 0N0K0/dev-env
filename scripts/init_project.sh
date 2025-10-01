@@ -13,8 +13,8 @@ else
 fi
 
 # Charger les presets s'ils sont disponibles
-if [ -f "scripts/init_presets.sh" ]; then
-    source scripts/init_presets.sh
+if [ -f "scripts/presets/init_presets.sh" ]; then
+    source scripts/presets/init_presets.sh
 fi
 
 # Fonction pour appliquer la configuration
@@ -46,12 +46,12 @@ apply_configuration() {
     
     # Mettre à jour le fichier .env
     sed -i.bak "s|^PROJECT_NAME=.*|PROJECT_NAME=$project_name|" .env
-    sed -i.bak "s|^DB_NAME=.*|DB_NAME=$project_name|" .env
     sed -i.bak "s|^TYPE=.*|TYPE=$type|" .env
     sed -i.bak "s|^BACKEND=.*|BACKEND=$backend|" .env
     sed -i.bak "s|^BACKEND_VERSION=.*|BACKEND_VERSION=$backend_version|" .env
     sed -i.bak "s|^DB_TYPE=.*|DB_TYPE=$db|" .env
     sed -i.bak "s|^DB_VERSION=.*|DB_VERSION=$db_version|" .env
+    sed -i.bak "s|^DB_NAME=.*|DB_NAME=$project_name|" .env
     sed -i.bak "s|^WEBSERVER=.*|WEBSERVER=$webserver|" .env
     sed -i.bak "s|^USE_MAILPIT=.*|USE_MAILPIT=$mailpit|" .env
     sed -i.bak "s|^USE_WEBSOCKET=.*|USE_WEBSOCKET=$websocket|" .env
@@ -69,53 +69,52 @@ apply_configuration() {
             ;;
     esac
     
-    rm -f .env.bak
     echo -e "${GREEN}✅ Configuration mise à jour dans .env${NC}"
 
     echo -e "\n${CYAN}🔧 Génération du fichier d'application...${NC}"
-    if [ -f "scripts/generate_files.sh" ]; then
-        bash scripts/generate_files.sh "$backend" "$type"
+    if [ -f "scripts/files_handlers/generate_files.sh" ]; then
+        bash scripts/files_handlers/generate_files.sh "$backend" "$type"
     else
-        echo -e "${YELLOW}⚠️  Script scripts/generate_files.sh non trouvé${NC}"
+        echo -e "${YELLOW}⚠️  Script scripts/files_handlers/generate_files.sh non trouvé${NC}"
     fi
 
     echo -e "\n${CYAN}🔄 Génération des configurations dynamiques...${NC}"
-    if [ -f "scripts/generate_compose.sh" ]; then
-        bash scripts/generate_compose.sh
+    if [ -f "scripts/files_handlers/generate_compose.sh" ]; then
+        bash scripts/files_handlers/generate_compose.sh
     else
-        echo -e "${YELLOW}⚠️  Script scripts/generate_compose.sh non trouvé${NC}"
+        echo -e "${YELLOW}⚠️  Script scripts/files_handlers/generate_compose.sh non trouvé${NC}"
     fi
     
-    if [ -f "scripts/generate_configs.sh" ]; then
-        bash scripts/generate_configs.sh
+    if [ -f "scripts/files_handlers/generate_configs.sh" ]; then
+        bash scripts/files_handlers/generate_configs.sh
     else
-        echo -e "${YELLOW}⚠️  Script scripts/generate_configs.sh non trouvé${NC}"
+        echo -e "${YELLOW}⚠️  Script scripts/files_handlers/generate_configs.sh non trouvé${NC}"
     fi
     
     echo -e "${GREEN}✅ Docker Compose et configurations générés${NC}"
 
     echo -e "\n${CYAN}🍺 Installation des outils de développement...${NC}"
-    if [ -f "scripts/install_dev_tools.sh" ]; then
-        bash scripts/install_dev_tools.sh
+    if [ -f "scripts/files_handlers/install_dev_tools.sh" ]; then
+        bash scripts/files_handlers/install_dev_tools.sh
     else
-        echo -e "${YELLOW}⚠️  Script scripts/install_dev_tools.sh non trouvé${NC}"
+        echo -e "${YELLOW}⚠️  Script scripts/files_handlers/install_dev_tools.sh non trouvé${NC}"
     fi
 }
 
 # Menu principal unifié
 main_menu() {
-    print_title "Initialisation du Projet - Menu Principal"
+    print_title "Initialisation du Projet"
     
     local project_type
     project_type=$(ask_choice "🎯 Type de projet" 1 \
-        "Configuration manuelle (mode avancé)" \
-        "Symfony API (API Platform + GraphQL optionnel)" \
-        "WordPress Bedrock (Thème moderne optionnel)" \
+        "Initialisation manuelle" \
+        "API Symfony" \
+        "WordPress Bedrock" \
         "Annuler")
     
     case "$project_type" in
-        "Symfony API"*)
-            echo -e "\n${GREEN}🎯 Configuration Symfony...${NC}"
+        "API Symfony"*)
+            echo -e "\n${GREEN}🎯 Initialisation Symfony...${NC}"
             if command -v configure_symfony_preset > /dev/null 2>&1; then
                 configure_symfony_preset
             else
@@ -124,7 +123,7 @@ main_menu() {
             fi
             ;;
         "WordPress Bedrock"*)
-            echo -e "\n${GREEN}🎯 Configuration WordPress...${NC}"
+            echo -e "\n${GREEN}🎯 Initialisation WordPress...${NC}"
             if command -v configure_wordpress_preset > /dev/null 2>&1; then
                 configure_wordpress_preset
             else
@@ -132,9 +131,9 @@ main_menu() {
                 return 1
             fi
             ;;
-        "Configuration manuelle"*)
-            echo -e "\n${GREEN}⚙️ Configuration manuelle...${NC}"
-            manual_configuration
+        "Initialisation manuelle"*)
+            echo -e "\n${GREEN}⚙️ Initialisation manuelle...${NC}"
+            manual_init
             ;;
         "Annuler")
             echo -e "\n${YELLOW}❌ Initialisation annulée${NC}"
@@ -148,7 +147,7 @@ main_menu() {
 }
 
 # Configuration manuelle (l'ancien contenu du script)
-manual_configuration() {
+manual_init() {
 
 # Fonction pour lire la configuration actuelle
 read_current_config() {
@@ -196,23 +195,13 @@ read_current_config() {
 clear
 print_title "CONFIGURATION DE L'ENVIRONNEMENT DE DÉVELOPPEMENT"
 
-echo -e "${GREEN}Bienvenue dans le configurateur interactif !${NC}"
-echo -e "Ce script va vous guider pour configurer votre environnement de développement."
-
-
 # Lire la configuration actuelle
 read_current_config
 
 echo -e "\n${CYAN}Appuyez sur Entrée pour utiliser la valeur par défaut ou saisissez votre choix.${NC}"
 
-# 1. Nom du projet (avec validation automatique)
+# 1. Nom du projet
 selected_project_name=$(ask_text "Nom du projet" "$current_project_name" true true)
-
-# Validation supplémentaire pour les minuscules et tirets uniquement 
-if [[ ! "$selected_project_name" =~ ^[a-z0-9-]+$ ]]; then
-    echo -e "${RED}❌ Le nom de projet doit contenir uniquement des lettres minuscules, chiffres et tirets${NC}"
-    exit 1
-fi
 
 # 2. Type d'application
 type_options=("api" "app")
@@ -259,16 +248,10 @@ webserver_options=("apache" "nginx")
 selected_webserver=$(ask_choice "Serveur web" "1" "${webserver_options[@]}")
 
 # 7. Mailpit
-selected_mailpit=$(ask_yes_no "Activer Mailpit (serveur de mail de développement)" "true")
+selected_mailpit=$(ask_yes_no "Activer Mailpit" "true")
 
-# 8. WebSocket (selon le backend)
-if [ "$selected_backend" = "php" ]; then
-    # Mercure disponible seulement pour PHP/Symfony
-    websocket_choice=$(ask_choice "🔌 WebSocket" 3 "Mercure (native Symfony)" "Socket.IO" "Non")
-else
-    # Pour les autres backends, seulement Socket.IO ou None
+# 8. WebSocket
     websocket_choice=$(ask_choice "🔌 WebSocket" 2 "Socket.IO" "Non")
-fi
 
 # Configuration WebSocket selon le choix
 if [ "$websocket_choice" = "Non" ]; then
@@ -276,11 +259,7 @@ if [ "$websocket_choice" = "Non" ]; then
     selected_websocket_type="none"
 else
     selected_websocket="true"
-    if [ "$websocket_choice" = "Mercure (native Symfony)" ]; then
-        selected_websocket_type="mercure"
-    else
-        selected_websocket_type="socketio"
-    fi
+            selected_websocket_type="socketio"
 fi
 
 # Récapitulatif
@@ -305,7 +284,7 @@ if [ "$confirm" = "true" ]; then
     echo -e "\n${GREEN}🚀 Application de la configuration...${NC}"
     apply_configuration "$selected_project_name" "$selected_type" "$selected_backend" "$selected_backend_version" "$selected_db" "$selected_db_version" "$selected_webserver" "$selected_mailpit" "$selected_websocket" "$selected_websocket_type"
     
-    echo -e "\n${GREEN}🎉 Configuration appliquée avec succès !${NC}"
+    echo -e "\n${GREEN}🦆 Configuration appliquée avec succès !${NC}"
     echo -e "${CYAN}💡 Utilisez 'make build && make start' pour construire et démarrer les services.${NC}"
 else
     echo -e "\n${YELLOW}⏸️  Configuration annulée.${NC}"
@@ -317,8 +296,7 @@ fi
 main() {
     # S'assurer que le fichier .env existe
     if [ ! -f ".env" ]; then
-        echo -e "${YELLOW}🔧 Initialisation du fichier .env...${NC}"
-        bash scripts/init_env.sh
+        bash scripts/files_handlers/init_env.sh
     fi
     
     # Lancer le menu principal

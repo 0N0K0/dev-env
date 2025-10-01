@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Script pour initialiser le fichier .env depuis .env.template
 # Ce script est appelé automatiquement par le Makefile si .env n'existe pas
 
@@ -18,7 +17,7 @@ fi
 if [ ! -f "$ENV_FILE" ]; then
     echo "📋 Initialisation du fichier $ENV_FILE depuis $TEMPLATE_FILE..."
     cp "$TEMPLATE_FILE" "$ENV_FILE"
-    echo "✅ Fichier $ENV_FILE créé (ignoré par Git via .gitignore)"
+    echo "✅ Fichier $ENV_FILE créé"
 else
     echo "✅ Fichier $ENV_FILE existe déjà"
 fi

@@ -6,5 +6,5 @@
 /docker/docker-compose.websocket.yml
 /docker/services/apache/vhost.conf
 /docker/services/nginx/nginx.conf
-/docker/services/websocket/package-lock.json
-/docker/services/websocket/node_modules
+/docker/services/socketio/package-lock.json
+/docker/services/socketio/node_modules
