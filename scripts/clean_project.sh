@@ -271,8 +271,6 @@ docker compose logs backend
 docker compose logs webserver
 docker compose logs database
 ```
-
-*Généré automatiquement par le script de nettoyage - $(date)*
 EOF
 
     echo -e "   ${GREEN}✅ README personnalisé généré${NC}"
