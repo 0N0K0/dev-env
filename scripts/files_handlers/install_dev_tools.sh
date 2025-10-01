@@ -168,7 +168,7 @@ echo "=================================================="
 case "$BACKEND" in
     php)
         if command -v php &> /dev/null; then
-            echo "� Outils PHP installés :"
+            echo "📋 Outils PHP installés :"
             echo "   🐘 PHP: $(php --version | head -n1)"
             echo "   📦 Composer: $(composer --version | head -n1)"
             command -v php-cs-fixer &> /dev/null && echo "   🔧 PHP-CS-Fixer: $(php-cs-fixer --version | head -n1)"
@@ -184,7 +184,7 @@ case "$BACKEND" in
         ;;
     python)
         if command -v python3 &> /dev/null; then
-            echo "� Outils Python installés :"
+            echo "📋 Outils Python installés :"
             echo "   🐍 Python: $(python3 --version)"
             echo "   📦 pip: $(pip3 --version)"
             command -v poetry &> /dev/null && echo "   📦 Poetry: $(poetry --version)"

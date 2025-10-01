@@ -414,11 +414,11 @@ show_final_summary() {
     echo -e "\n${GREEN}🦆 NETTOYAGE TERMINÉ !${NC}"
     print_title "RÉSUMÉ"
     
-    echo -e "${CYAN}� Fichiers générés :${NC}"
+    echo -e "${CYAN}Fichiers générés :${NC}"
     echo -e "   ${GREEN}✅ README.md personnalisé${NC}"
     echo -e "   ${GREEN}✅ Makefile simplifié${NC}"
     
-    echo -e "\n${CYAN}�📋 Configuration finale :${NC}"
+    echo -e "\n${CYAN}📋 Configuration finale :${NC}"
     echo -e "   ${YELLOW}Projet:${NC} ${GREEN}$PROJECT_NAME${NC}"
     echo -e "   ${YELLOW}Backend:${NC} ${GREEN}$BACKEND${NC} (docker/services/$BACKEND/)"
     echo -e "   ${YELLOW}Serveur web:${NC} ${GREEN}$WEBSERVER${NC} (docker/services/$WEBSERVER/)"
