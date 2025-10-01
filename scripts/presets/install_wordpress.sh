@@ -51,8 +51,12 @@ DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
 DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
 DB_PORT=$(grep "^DB_PORT=" .env | cut -d'=' -f2)
 
-# Configuration temporaire pour WP-CLI local
+# Configuration temporaire pour WP-CLI local via .env.local
 echo -e "\n${YELLOW}🔧 Configuration temporaire pour WP-CLI local...${NC}"
+cat > app/.env.local << EOF
+# Configuration temporaire pour WP-CLI local
+DB_HOST=127.0.0.1:${DB_PORT}
+EOF
 
 # Vérifier si WordPress est déjà installé  
 echo -e "\n${YELLOW}🔍 Vérification de l'installation WordPress...${NC}"
@@ -62,7 +66,7 @@ if wp core is-installed --path=./app/web/wp > /dev/null 2>&1; then
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${CYAN}💡 Installation annulée${NC}"
         # Nettoyer le fichier temporaire
-        rm -f app/wp-config-cli.php
+        rm -f app/.env.local
         exit 0
     fi
 fi
@@ -103,3 +107,8 @@ fi
 if [ "$USE_CUSTOM_BLOCKS" = "true" ]; then
     echo -e "4. ${CYAN}Développer avec Vite :${NC} cd app/web/app/themes/${PROJECT_NAME}-theme && npm run dev"
 fi
+
+# Nettoyer le fichier de configuration temporaire
+echo -e "\n${CYAN}🧹 Nettoyage des fichiers temporaires...${NC}"
+rm -f app/.env.local
+echo -e "${GREEN}✅ Configuration temporaire supprimée${NC}"
